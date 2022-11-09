@@ -1,44 +1,113 @@
-# -*- coding: UTF-8 -*-                            
-# @Author  ：LLL                         
-# @Date    ：2022/11/7 21:24  
+# -*- coding: UTF-8 -*-
+# @Author  ：LLL
+# @Date    ：2022/11/7 21:24
 import requests
-
 requests.packages.urllib3.disable_warnings()
 
+import re
+import sys
+import os
+sys.path.append(f'..{os.sep}')
+import conf.conf as conf
+import conf.model as model
+import utils.utils as utils
 API_BAIDU = 'https://image.baidu.com/search/acjson?tn=resultjson_com&ipn=rj&fp=result&word={}&cl=2&lm=-1&ie=utf-8&oe=utf-8&pn={}&rn={}'
-HEADERS = {
-    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/100.0.4896.60 Safari/537.36',
-    'Connection': 'keep-alive',
-    'Cookie': 'winWH=%5E6_1536x760; BDIMGISLOGIN=0; BDqhfp=%E5%A4%A7%E6%B5%B7%26%26NaN-1undefined%26%260%26%261; BIDUPSID=DAF9F732F5E7194E4C40073E6D597F5C; PSTM=1635870319; __yjs_duid=1_c9e50b0601fb34e9d5496d8d586043011635987389929; BDORZ=B490B5EBF6F3CD402E515D22BCDA1598; BAIDUID=6C15C2AA607EF52C69767D84A939DFCD:FG=1; BAIDUID_BFESS=6C15C2AA607EF52C69767D84A939DFCD:FG=1; ZFY=hdyEzkktTSJSAz7iqn1l:BE:Bcm:Aex1ByfctpUfRs88jA:C; indexPageSugList=%5B%22%E8%80%81%E9%BC%A0%22%2C%22%E6%89%8B%E9%87%8C%E6%8B%BF%E7%9D%80%E7%83%9F%E7%9A%84%E5%9B%BE%E7%89%87%E7%9C%9F%E5%AE%9E%22%2C%22%E8%87%AA%E5%97%A8%22%2C%22%E8%87%AA%E6%8B%8D%22%2C%22%E6%AF%94%E5%BF%83%E6%89%8B%E5%8A%BF%22%2C%22%E9%A3%9F%E5%93%81%E5%B9%BF%E5%91%8A%22%2C%22%E8%A7%86%E5%B1%8F%E5%B9%BF%E5%91%8A%22%2C%22%E6%8A%A4%E8%82%A4%E5%93%81%E5%B9%BF%E5%91%8A%22%2C%22%E6%B4%97%E9%9D%A2%E5%A5%B6%E5%B9%BF%E5%91%8A%22%5D; __bid_n=1844d56671e59fb58f4207; H_PS_PSSID=36553_37691_36885_34812_37486_37726_37537_37497_37673_26350_37479; delPer=0; PSINO=1; BA_HECTOR=01ah0k2h2l8g01a10h242ec71hmi0cf1f; BDRCVFR[dG2JNJb_ajR]=mk3SLVN4HKm; userFrom=www.baidu.com; BDRCVFR[-pGxjrCMryR]=mk3SLVN4HKm; BDRCVFR[Txj84yDU4nc]=mk3SLVN4HKm; BDRCVFR[tox4WRQ4-Km]=mk3SLVN4HKm; ab_sr=1.0.1_YmQ2NDYyNzEyZmY1NDIyYTFjMjY1YjBhOTllOWI1MTdkMDk1YjIxNGUxZGNjYWRlZmNlNzlhMmUxNDM1Y2Y2MDE2Yzg3OGUzMzk5YjE3NjA4YzA1NjhmMTA0MDA0YjdkMDcxMTA5ZGViZDU2ZWUzYmNjMzUzMDIyNTQyZDIwZjNiY2U2MDBlYWJhZWZjMDI5MTA5ZjU1NmRlOGY2ZjNlZg==',
-    'Host': 'image.baidu.com'
-}
 
 
-# 根据关键字获取图片所在页面的地址
-def get_page_url_by_keyword(keyword: str):
-    page_num = 0  # 页码
-    per_page = 30  # 每页的数量
-    while True:
-        url = API_BAIDU.format(keyword, page_num, per_page)
-        res = requests.get(url, headers=HEADERS, verify=False)
-        if res.status_code != 200:
-            return
 
-        try:
+#关键字爬虫：根据关键字，爬取相关页面，产出imgurl
+class BaiduSpider:
+    
+    def __init__(self,keyword:str,page_url:str) -> None:
+        self.keyword=keyword
+        # self.Page=model.Page(keyword,page_url) #初始化一个Page对象
+        # self.Img=model.Img(keyword, page_url) #初始化一个空的Img对象
+    
+    # 根据关键字获取图片所在页面的地址
+    @utils.clocked
+    def get_page_url_by_keyword(keyword: str):
+        page_num = 0  # 页码
+        per_page = 30  # 每页的数量
+        page_set=set()
+        while True:
+            url = API_BAIDU.format(keyword, page_num, per_page)
+            res = requests.get(url, headers=conf.HEADERS, verify=False)
+            if res.status_code != 200:
+                return
             json_content = res.json()
             data_list = json_content['data']
             for item in data_list:
-                for inner_item in item['replaceUrl']:
-                    print(inner_item['FromUrl'])  # 图片的原始页
+                if 'replaceUrl' in item:
+                    item = item['replaceUrl']
+                    for inner_item in item:
+                        if 'FromUrl' in inner_item:
+                            page_url = inner_item['FromUrl']
+                            page_set.add(page_url)
 
             if len(data_list) < per_page:  # 最后一页
                 break
 
-        except Exception as e:
-            print(e)
+            page_num += per_page
+        conf.img_spider_logger.info(f'func[get_page_url_by_keyword]->keyword:{keyword},crwaled {page_num} page(s),get {len(page_set)} page_url(s).')
+    
+    
+        # 解析加密的url
+    def parse_encrypt_url(encrypt_url: str = 'ippr_z2C$qAzdH3FAzdH3Fi7wkwg_z&e3Bv54AzdH3FrtgfAzdH3F8ddal9lcaAzdH3F') -> str:
+        mapping = {
+            'w': "a",
+            'k': "b",
+            'v': "c",
+            '1': "d",
+            'j': "e",
+            'u': "f",
+            '2': "g",
+            'i': "h",
+            't': "i",
+            '3': "j",
+            'h': "k",
+            's': "l",
+            '4': "m",
+            'g': "n",
+            '5': "o",
+            'r': "p",
+            'q': "q",
+            '6': "r",
+            'f': "s",
+            'p': "t",
+            '7': "u",
+            'e': "v",
+            'o': "w",
+            '8': "1",
+            'd': "2",
+            'n': "3",
+            '9': "4",
+            'c': "5",
+            'm': "6",
+            '0': "7",
+            'b': "8",
+            'l': "9",
+            'a': "0",
+            '_z2C$q': ":",
+            "_z&e3B": ".",
+            'AzdH3F': "/"
+        }  # 映射表
+        encrypt_url = re.sub('AzdH3F', '/', encrypt_url)  # 替换
+        encrypt_url = re.sub("_z&e3B", ".", encrypt_url)
+        encrypt_url = re.sub('_z2C\$q', ":", encrypt_url)
+        url_list = []
+        for c in encrypt_url:
+            if c in mapping:  # 替换掉加密的url中的一些字符
+                c = mapping[c]
+            url_list.append(c)
+        return ''.join(url_list)
 
-        page_num += per_page
+
 
 
 if __name__ == '__main__':
+    objURL="ipprf_z2C$qAzdH3FAzdH3F2t42d_z&e3Bkwt17_z&e3Bv54AzdH3Ft4w2j_fjw6viAzdH3Ff6v=ippr%nA%dF%dFikt42_z&e3Bka_z&e3B7rwty7g_z&e3Bv54%dFwb80cbw898m1bucwdbjacb81jkmanbalm9unm9vumdwj-AGOlnv_uomcb&6juj6=ippr%nA%dF%dFikt42_z&e3Bka_z&e3B7rwty7g_z&e3Bv54&wrr=daad&ftzj=ullll,8aaaa&q=wba&g=a&2=ag&u4p=w7p5?fjv=8m0ann0adc&p=ukubcnk1dbdb9ja01j11jck1uwna0vvc"
+
+    url=parse_encrypt_url(objURL)
+    print(url)
     get_page_url_by_keyword('大海')
+    
