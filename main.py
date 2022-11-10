@@ -7,4 +7,13 @@
 # 2.解析页面内容，抽取需要的部分
 # 3.
 
+import conf.conf as conf
+
+
+img_spider_logger=conf.img_spider_logger
+
+img_spider_logger.info('hello')
+
+
+
 

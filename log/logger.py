@@ -19,25 +19,22 @@ class MyLogger:
             MyLogger.log_file = os.path.join(log_dir, 'img_spider.log')
 
     @classmethod
-    def get_logger(cls):
+    def get_logger(cls):#获取日志器
         img_spider_logger = logging.getLogger('img_spider_logger')
         img_spider_logger.setLevel(logging.INFO)
         if cls.log_to_file:
-            handler = logging.FileHandler(
-                filename=cls.log_file, mode='a', encoding='utf8')
-
+            handler = logging.FileHandler(filename=cls.log_file, mode='a', encoding='utf8')
         else:
             handler = logging.StreamHandler()
-
+            
         handler.setLevel(logging.INFO)
         formater = logging.Formatter('%(levelname)s:%(asctime)s:%(message)s')
         handler.setFormatter(formater)
         img_spider_logger.addHandler(handler)
+        
         return img_spider_logger
 
 
 if __name__ == '__main__':
-    logger=MyLogger().get_logger()
+    logger = MyLogger(log_to_file=True).get_logger()
     logger.info('hello')
-
-
