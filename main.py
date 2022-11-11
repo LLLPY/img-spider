@@ -7,13 +7,16 @@
 # 2.解析页面内容，抽取需要的部分
 # 3.
 
-import conf.conf as conf
+import asyncio
+from spider.baidu_spider import run_baidu_spider
+
+async def main():
+    keyword='大海'
+    await run_baidu_spider(keyword)
 
 
-img_spider_logger=conf.img_spider_logger
 
-img_spider_logger.info('hello')
-
-
+if __name__ == '__main__':
+    asyncio.run(main())
 
 

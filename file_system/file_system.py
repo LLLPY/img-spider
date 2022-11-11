@@ -1,7 +1,6 @@
 import pickle
 import os
-
-
+import aiofiles
 
 
 class MyPickle:
@@ -28,7 +27,9 @@ class MyPickle:
             pickle.dump(obj, f)
 
 
-
+    
+        
+    
 
 if __name__ == '__main__':
     my_pickle = MyPickle(file_path='data/demo')

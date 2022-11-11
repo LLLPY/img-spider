@@ -12,7 +12,7 @@ def clocked(func):
     def clock_it(*args,**kwargs):
         
         start=time.time_ns()
-        res=func(*args,**kwargs)
+        res= func(*args,**kwargs)
         end=time.time_ns()
 
         print(f'func[{func.__name__}] costs {(end-start)/1000000000} s')
