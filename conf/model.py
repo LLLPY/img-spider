@@ -5,6 +5,7 @@
 import uuid
 import datetime
 import os
+from .conf import workdir
 # 页面
 
 
@@ -46,7 +47,6 @@ class Img:
         self.page_url = page_url  # 图片所在的页面
         self.crawl_time = crawl_time  # 爬取的时间
         date_now = datetime.datetime.now()
-        workdir = os.path.abspath('..')
         self.save_path = os.path.join(workdir, 'data', keyword, str(date_now.year), str(
             date_now.month), str(date_now.day), self.uid+'.jpg')  # 保存的地址
 
@@ -58,3 +58,4 @@ if __name__ == '__main__':
     print(datetime.datetime.now())
     uid = uuid.uuid3(uuid.NAMESPACE_URL, 'http://www.lll.plus')   # 唯一标识
     print(uid.hex)
+    print(workdir)
