@@ -9,7 +9,8 @@ import os
 import sys
 from urllib.request import urlretrieve
 from lxml import etree
-
+import selenium
+import re
 sys.path.append(f'..{os.sep}')
 import conf.conf as conf
 import conf.model as model
@@ -32,6 +33,25 @@ class BaseSpider:
             res = None
             success = False
         return success, res
+    
+    
+    #urlretrieve
+    def urlretrieve_get(url,save_path,is_delete=False):
+        
+        urlretrieve(url,save_path)
+        #如果仅仅是临时文件，就将其删除
+        if is_delete:
+            with open(save_path,'r',encoding='utf8') as f:
+                content=f.read()
+            os.remove(save_path)
+            return save_path,content
+        else:
+            return save_path,''
+        
+    #chrome get
+    def chrome_get(self,url):
+        
+        pass   
 
     # 根据获取一个page上的img链接
     async def get_img_url_on_page(self):
@@ -44,6 +64,8 @@ class BaseSpider:
                 conf.img_spider_logger.warning(f'get img url failed from page:{page_obj.url}')
                 continue
             html = res.text
+            relate_links=self.get_pre_and_next_links(html)
+            print(11111,relate_links)
             try:
                 e = etree.HTML(html)
                 img_list = e.xpath('//body//img/@src')
@@ -68,7 +90,8 @@ class BaseSpider:
         if not os.path.isdir(dirs):
             os.makedirs(dirs)
         try:
-            urlretrieve(img_obj.url, img_obj.save_path)
+            cls.urlretrieve_get(img_obj.url,img_obj.save_path)
+            # urlretrieve(img_obj.url, img_obj.save_path)
         except Exception as e:
             conf.img_spider_logger.warning(f'download img failed,error info {e},img url:{img_obj.url}')
 
@@ -82,6 +105,17 @@ class BaseSpider:
         #             content = await res.content.read()
         #             await f.write(content)
         #             print('下载完成...')
+
+
+    #获取某个页面中上一页和下一页的链接
+    @staticmethod
+    def get_pre_and_next_links(html):
+        pattern1=r'<a.*[pre|next]{1}.*href="(.*?)".*>.*[上一页|pre|下一页|next]*.*</a>'
+        pattern2=r'<a.*href="(.*?)".*[pre|next]{1}>.*[上一页|pre|下一页|next]*.*</a>'
+        res1=re.findall(pattern1,html,re.IGNORECASE)
+        res2=re.findall(pattern2,html,re.IGNORECASE)
+        res1.extend(res2)
+        return res1
 
 
 if __name__ == '__main__':

@@ -5,7 +5,6 @@
 import re
 import asyncio
 from .base_spider import BaseSpider
-
 import conf.conf as conf
 import conf.model as model
 import utils.utils as utils
