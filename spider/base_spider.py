@@ -11,6 +11,8 @@ from urllib.request import urlretrieve
 from lxml import etree
 import selenium
 import re
+import time
+from selenium import webdriver
 sys.path.append(f'..{os.sep}')
 import conf.conf as conf
 import conf.model as model
@@ -36,8 +38,9 @@ class BaseSpider:
     
     
     #urlretrieve
+    @staticmethod
     def urlretrieve_get(url,save_path,is_delete=False):
-        
+    
         urlretrieve(url,save_path)
         #如果仅仅是临时文件，就将其删除
         if is_delete:
@@ -49,21 +52,30 @@ class BaseSpider:
             return save_path,''
         
     #chrome get
-    def chrome_get(self,url):
-        
-        pass   
+    @staticmethod
+    def chrome_get(url):        
+        chrome_options=webdriver.ChromeOptions()
+        chrome_options.add_argument('--headless')
+        chrome_driver=webdriver.Chrome(chrome_options=chrome_options)
+        chrome_driver.get(url)
+        time.sleep(1)
+        page=chrome_driver.page_source
+        chrome_driver.close()
+        return page
+   
 
     # 根据获取一个page上的img链接
     async def get_img_url_on_page(self):
         while True:
             await asyncio.sleep(0)  # 让出cpu
             page_obj = conf.page_ready_to_crawl_queue.get()
-            success, res = self.get(page_obj.url)
-            if not success:
-                conf.page_crawled_set.add(page_obj.url)  # 不成功就添加到已爬取的集合中
-                conf.img_spider_logger.warning(f'get img url failed from page:{page_obj.url}')
-                continue
-            html = res.text
+            # success, res = self.get(page_obj.url)
+            # if not success:
+            #     conf.page_crawled_set.add(page_obj.url)  # 不成功就添加到已爬取的集合中
+            #     conf.img_spider_logger.warning(f'get img url failed from page:{page_obj.url}')
+            #     continue
+            # html = res.text
+            html=self.chrome_get(page_obj.url)
             relate_links=self.get_pre_and_next_links(html)
             print(11111,relate_links)
             try:
@@ -110,12 +122,14 @@ class BaseSpider:
     #获取某个页面中上一页和下一页的链接
     @staticmethod
     def get_pre_and_next_links(html):
-        pattern1=r'<a.*[pre|next]{1}.*href="(.*?)".*>.*[上一页|pre|下一页|next]*.*</a>'
-        pattern2=r'<a.*href="(.*?)".*[pre|next]{1}>.*[上一页|pre|下一页|next]*.*</a>'
-        res1=re.findall(pattern1,html,re.IGNORECASE)
-        res2=re.findall(pattern2,html,re.IGNORECASE)
-        res1.extend(res2)
-        return res1
+        pattern=r'<a.*href="(.*?)".*>.*{}.*</a>'
+        tag_list=['上一页','pre','下一页','next','page']
+        res=[]
+        for tag in tag_list:
+            tmp_res=re.findall(pattern.format(tag),html,re.IGNORECASE)
+            res.extend(tmp_res)
+        return list(set(res))
+
 
 
 if __name__ == '__main__':

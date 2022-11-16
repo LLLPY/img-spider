@@ -1,3 +1,4 @@
+#coding:utf8
 from urllib.request import urlretrieve
 headers={ 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/100.0.4896.60 Safari/537.36',
     'Connection': 'keep-alive',
@@ -13,37 +14,12 @@ from selenium import webdriver
 url='http://mote.auto.sohu.com/photo/pic2107762.shtml'
 chrome_options=webdriver.ChromeOptions()
 chrome_options.add_argument('--headless')
-# chrome_driver=webdriver.Chrome(chrome_options=chrome_options)
-# chrome_driver.get(url)
-
+chrome_driver=webdriver.Chrome(chrome_options=chrome_options)
+chrome_driver.get(url)
+page=chrome_driver.page_source
+print(page)
 # path,msg=urlretrieve(url,'1.html')
 # print(path)
 # print(msg.as_string())
-# chrome_driver.close()
-
-import re
-a='''
-<a href="/learningPlanet/780" class="post-enter">阅读原文&gt;&gt;</a>
-<a id="PrE" class="" href="/photo/pic2107755.shtml" hidefocus="true">下一页</a>
-<a href="?page=2" aria-label="Next"><span aria-hidden="true">下一页»</span></a>
-<a href="?page=1" aria-label="Next"><span aria-hidden="true">上一页»</span></a>
-<a href="?page=10" aria-label="Next"><span aria-hidden="true"></span></a>
-'''
-
-
-#获取某个页面中上一页和下一页的链接
-def get_pre_and_next_links(html):
-    pattern1=r'<a.*[pre|next]{1}.*href="(.*?)".*>.*[上一页|pre|下一页|next]*.*</a>'
-    pattern2=r'<a.*href="(.*?)".*[pre|next]{1}>.*[上一页|pre|下一页|next]*.*</a>'
-    res1=re.findall(pattern1,html,re.IGNORECASE)
-    res2=re.findall(pattern2,html,re.IGNORECASE)
-    res1.extend(res2)
-    print(res1)
-    return res1
-
-get_pre_and_next_links(a)
-
-
-
-
+chrome_driver.close()
 
