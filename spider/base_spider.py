@@ -2,6 +2,8 @@
 # @Author  ：LLL                         
 # @Date    ：2022/11/7 22:01  
 import asyncio
+import hashlib
+
 import aiohttp
 import aiofiles
 import requests
@@ -43,20 +45,22 @@ class BaseSpider:
     
         urlretrieve(url,save_path)
         #如果仅仅是临时文件，就将其删除
+
+        with open(save_path,'r',encoding='utf8') as f:
+            content=f.read()
+
         if is_delete:
-            with open(save_path,'r',encoding='utf8') as f:
-                content=f.read()
             os.remove(save_path)
-            return save_path,content
-        else:
-            return save_path,''
+        return save_path,content
+
+
         
     #chrome get
     @staticmethod
     def chrome_get(url):        
         chrome_options=webdriver.ChromeOptions()
-        chrome_options.add_argument('--headless')
-        chrome_driver=webdriver.Chrome(chrome_options=chrome_options)
+        # chrome_options.add_argument('--headless')
+        chrome_driver=webdriver.Chrome(chrome_options=chrome_options,service=conf.CHROMEDRIVER_SERVICE)
         chrome_driver.get(url)
         time.sleep(1)
         page=chrome_driver.page_source
@@ -68,16 +72,19 @@ class BaseSpider:
     async def get_img_url_on_page(self):
         while True:
             await asyncio.sleep(0)  # 让出cpu
+
             page_obj = conf.page_ready_to_crawl_queue.get()
-            # success, res = self.get(page_obj.url)
+            success, res = self.get(page_obj.url)
             # if not success:
             #     conf.page_crawled_set.add(page_obj.url)  # 不成功就添加到已爬取的集合中
             #     conf.img_spider_logger.warning(f'get img url failed from page:{page_obj.url}')
             #     continue
             # html = res.text
-            html=self.chrome_get(page_obj.url)
+            # html=self.chrome_get(page_obj.url)
+            _,html=self.urlretrieve_get(page_obj.url,hashlib.sha1(str(page_obj.url).encode('utf8')).hexdigest()+'.html')
             relate_links=self.get_pre_and_next_links(html)
-            print(11111,relate_links)
+            conf.img_spider_logger.info(f'page:{page_obj.url}\n,relate_links:{relate_links}')
+
             try:
                 e = etree.HTML(html)
                 img_list = e.xpath('//body//img/@src')
@@ -102,8 +109,7 @@ class BaseSpider:
         if not os.path.isdir(dirs):
             os.makedirs(dirs)
         try:
-            cls.urlretrieve_get(img_obj.url,img_obj.save_path)
-            # urlretrieve(img_obj.url, img_obj.save_path)
+            urlretrieve(img_obj.url, img_obj.save_path)
         except Exception as e:
             conf.img_spider_logger.warning(f'download img failed,error info {e},img url:{img_obj.url}')
 
