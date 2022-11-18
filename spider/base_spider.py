@@ -112,7 +112,7 @@ class BaseSpider:
             urlretrieve(img_obj.url, img_obj.save_path)
         except Exception as e:
             conf.img_spider_logger.warning(f'download img failed,error info {e},img url:{img_obj.url}')
-
+        conf.img_crawled_set.add(img_obj.url)
         # async with aiohttp.ClientSession() as session:
         #     aiohttp.ClientTimeout(5) #最大等待时间为5秒
         #     async with session.get(img_obj.url, headers=conf.HEADERS) as res:
@@ -124,6 +124,19 @@ class BaseSpider:
         #             await f.write(content)
         #             print('下载完成...')
 
+    
+    
+    # 下载图片
+    async def download_imgs(self):
+        while True:
+            await asyncio.sleep(0)  # 让出cpu
+            task_list = []
+            while conf.img_ready_to_crawl_queue.qsize():  # 只要有待消费的图片，就创建一个协程任务
+                img_obj = conf.img_ready_to_crawl_queue.get()
+                task = asyncio.create_task(self.download_img(img_obj))
+                task_list.append(task)
+            for task in task_list:
+                await task
 
     #获取某个页面中上一页和下一页的链接
     @staticmethod

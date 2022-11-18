@@ -73,21 +73,6 @@ class BaiduSpider(BaseSpider):
     def get_page_url_by_img(self):
         pass
 
-
-    # 下载图片
-    async def download_imgs(self):
-        while True:
-            await asyncio.sleep(0)  # 让出cpu
-            task_list = []
-            while conf.img_ready_to_crawl_queue.qsize(): #只要有待消费的图片，就创建一个协程任务
-                img_obj = conf.img_ready_to_crawl_queue.get()
-                task = asyncio.create_task(self.download_img(img_obj))
-                task_list.append(task)
-            for task in task_list:
-                await task
-            # task.add_done_callback()
-            # conf.img_crawled_set.add(img_obj.url)  # 添加到已爬取的集合中
-
     # 解析加密的url
     @staticmethod
     def parse_encrypt_url(

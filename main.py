@@ -2,7 +2,7 @@
 # @Author  ：LLL                         
 # @Date    ：2022/11/6 22:05  
 
-from spider import baidu_spider,_360_spider
+from spider import baidu_spider,_360_spider,bing_spider
 from concurrent.futures import ThreadPoolExecutor
 
 
@@ -10,10 +10,11 @@ from concurrent.futures import ThreadPoolExecutor
 def main():
     th_pool = ThreadPoolExecutor(10)
     # keyword=input('请输入关键字：')
-    keyword = '大海'
+    keyword = '美女'
     # 没类爬虫单独启一个线程
     # th_pool.submit(baidu_spider.run_baidu_spider(keyword))  # 百度爬虫
-    th_pool.submit(_360_spider.run_360_spider(keyword))  # 360爬虫
+    # th_pool.submit(_360_spider.run_360_spider(keyword))  # 360爬虫
+    th_pool.submit(bing_spider.run_bing_spider(keyword))  # bing爬虫
     th_pool.shutdown()
 
 

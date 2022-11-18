@@ -1,2 +1,1 @@
-#https://image.so.com/j?callback=jQuery18305786014419493493_1668695215101&q=%E5%A4%A7%E6%B5%B7&qtag=&pd=1&pn=60&correct=%E5%A4%A7%E6%B5%B7&adstar=0&tab=all&sid=7fcae1e6bbcaaf680137afb2f59b20eb&ras=0&cn=0&gn=0&kn=11&crn=0&bxn=20&cuben=0&pornn=0&manun=4&src=tab_www&sn=91&ps=62&pc=62
-#https://image.so.com/j?callback=jQuery18305786014419493493_1668695215102&q=%E5%A4%A7%E6%B5%B7&qtag=&pd=1&pn=60&correct=%E5%A4%A7%E6%B5%B7&adstar=0&tab=all&sid=7fcae1e6bbcaaf680137afb2f59b20eb&ras=0&cn=0&gn=0&kn=11&crn=0&bxn=20&cuben=0&pornn=0&manun=4&src=tab_www&sn=147&ps=113&pc=51
+#https://pic.sogou.com/napi/pc/searchList?mode=1&start={}&xml_len={}&query={}
