@@ -9,64 +9,49 @@ import conf.conf as conf
 import conf.model as model
 import utils.utils as utils
 
-API_BAIDU = 'https://image.baidu.com/search/acjson?tn=resultjson_com&ipn=rj&fp=result&word={}&cl=2&lm=-1&ie=utf-8&oe=utf-8&pn={}&rn={}'
-
 
 # 关键字爬虫：根据关键字，爬取相关页面，产出imgurl
 class BaiduSpider(BaseSpider):
+    API = 'https://image.baidu.com/search/acjson?tn=resultjson_com&ipn=rj&fp=result&word={}&cl=2&lm=-1&ie=utf-8&oe=utf-8&pn={}&rn={}'
+    HEADERS = {
+        'Accept': 'text/plain, */*; q=0.01', 'Accept-Encoding': 'gzip, deflate, br',
+        'Accept-Language': 'zh-CN,zh;q=0.9', 'Connection': 'keep-alive',
+        'Host': 'image.baidu.com',
+        'Referer': 'https//image.baidu.com/search/index?tn=baiduimage&ps=1&ct=201326592&lm=-1&cl=2&nc=1&ie=utf-8&dyTabStr=MCwzLDEsNSw0LDcsOCwyLDYsOQ%3D%3D&word=%E7%8B%AE%E5%AD%90',
+        'sec-ch-ua': '" Not A;Brand";v="99", "Chromium";v="100", "Google Chrome";v="100"',
+        'sec-ch-ua-mobile': '?0', 'sec-ch-ua-platform': '"Windows"', 'Sec-Fetch-Dest': 'empty',
+        'Sec-Fetch-Mode': 'cors', 'Sec-Fetch-Site': 'same-origin',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/100.0.4896.60 Safari/537.36',
+        'X-Requested-With': 'XMLHttpRequest',
+        'cookie': 'BIDUPSID=DAF9F732F5E7194E4C40073E6D597F5C; PSTM=1635870319; __yjs_duid=1_c9e50b0601fb34e9d5496d8d586043011635987389929; BAIDUID=6C15C2AA607EF52C69767D84A939DFCD:FG=1; indexPageSugList=%5B%22%E8%80%81%E9%BC%A0%22%2C%22%E6%89%8B%E9%87%8C%E6%8B%BF%E7%9D%80%E7%83%9F%E7%9A%84%E5%9B%BE%E7%89%87%E7%9C%9F%E5%AE%9E%22%2C%22%E8%87%AA%E5%97%A8%22%2C%22%E8%87%AA%E6%8B%8D%22%2C%22%E6%AF%94%E5%BF%83%E6%89%8B%E5%8A%BF%22%2C%22%E9%A3%9F%E5%93%81%E5%B9%BF%E5%91%8A%22%2C%22%E8%A7%86%E5%B1%8F%E5%B9%BF%E5%91%8A%22%2C%22%E6%8A%A4%E8%82%A4%E5%93%81%E5%B9%BF%E5%91%8A%22%2C%22%E6%B4%97%E9%9D%A2%E5%A5%B6%E5%B9%BF%E5%91%8A%22%5D; BDORZ=B490B5EBF6F3CD402E515D22BCDA1598; H_PS_PSSID=36553_37691_37771_34812_37777_37726_37794_37537_37673_37741_26350_37479; BAIDUID_BFESS=6C15C2AA607EF52C69767D84A939DFCD:FG=1; BCLID=10509626168540897276; BCLID_BFESS=10509626168540897276; BDSFRCVID=EDtOJeC62lJHcXTjfOFFJnMfFeXfHWTTH6aoHImG5mdPvRWmchMZEG0P3M8g0KubwlTDogKKKgOTHICF_2uxOjjg8UtVJeC6EG0Ptf8g0f5; BDSFRCVID_BFESS=EDtOJeC62lJHcXTjfOFFJnMfFeXfHWTTH6aoHImG5mdPvRWmchMZEG0P3M8g0KubwlTDogKKKgOTHICF_2uxOjjg8UtVJeC6EG0Ptf8g0f5; H_BDCLCKID_SF=tb4qoD-htCD3fb7Nb4k_-P6MQtOJWMT-0bFHWpcdKMnxjRQOQxjkhxuEQxovKfvUQNn7_JjOWpTVsI5zbh3-0l-D-U7uXfQxtN4e2CnjtpvhH4313MOobUPUyUJ9LUvA02cdot5yBbc8eIna5hjkbfJBQttjQn3hfIkj0DKLK-oj-DKwe5tM3e; H_BDCLCKID_SF_BFESS=tb4qoD-htCD3fb7Nb4k_-P6MQtOJWMT-0bFHWpcdKMnxjRQOQxjkhxuEQxovKfvUQNn7_JjOWpTVsI5zbh3-0l-D-U7uXfQxtN4e2CnjtpvhH4313MOobUPUyUJ9LUvA02cdot5yBbc8eIna5hjkbfJBQttjQn3hfIkj0DKLK-oj-DKwe5tM3e; delPer=0; PSINO=1; BA_HECTOR=25aga50h84a50k2k8k8lag6h1hnj5fq1e; ZFY=VUXSHNnFX4BfxSdSYesiZTioZSV91VQjThx3iw9fwYU:C; BDRCVFR[-pGxjrCMryR]=mk3SLVN4HKm; BDRCVFR[dG2JNJb_ajR]=mk3SLVN4HKm; ariaDefaultTheme=undefined; RT="z=1&dm=baidu.com&si=7m16wrp3oih&ss=lapaokf9&sl=u&tt=1t38&bcn=https%3A%2F%2Ffclog.baidu.com%2Flog%2Fweirwood%3Ftype%3Dperf&ld=azay&ul=b2uy&hd=b2wa"; userFrom=www.baidu.com; ab_sr=1.0.1_ZmRmNjRhZTg2M2U1ZDk2YmRiN2EyYjRjYzRiMTM4Mzc1NTkzMGY3ZDBkOTlkY2Q5YjUwYzNjMTc0YmZhNDY1MjE1MWVjOTViZjgxMGM2MTBlNjU4MDc5YzdiNjFjMTYyOGQyZmNhYzM5YzgyMGNmNmNhMzY2YTU2ZWU2ODUyN2Y0OWEzNDNhZGYxOWMyNTM3YmI0MDI1Y2I2YmRlNmM2Mw==',
+    }
 
     def __init__(self, keyword: str) -> None:
         super(BaiduSpider, self).__init__(keyword)
 
-    # 根据关键字获取图片所在页面的地址
-    async def get_page_url_by_keyword(self):
-        page_num = 0  # 页码
-        per_page = 30  # 每页的数量
-        page_set = set()
-        while True:
-            await asyncio.sleep(0)
-            url = API_BAIDU.format(
-                self.keyword, page_num, per_page)  # done:#判断该url是否已爬取
-            if url in conf.api_crawled_set:
-                continue  # 如果是已经爬取的url，就不用再爬取了
-            success, res = self.get(url, headers=conf.HEADERS)
-            if not success:
-                conf.api_crawled_set.add(url)  # 将失败的url添加到api_crawled_set集合中
-                continue
-            # 数据抽取
-            json_content = res.json()
-            data_list = json_content['data']
-            conf.img_spider_logger.info(f'get {len(data_list)} items from {url}')
-            for item in data_list:
-                page_url = None
-                if 'replaceUrl' in item:
-                    items = item['replaceUrl']
-                    for inner_item in items:
-                        if 'FromUrl' in inner_item:
-                            page_url = inner_item['FromUrl']
-                            # done 判断该page_url是否已爬取，如果没有爬取就添加到消费队列
-                            if page_url in conf.page_crawled_set:
-                                continue
-                            page_set.add(page_url)
-                            page_obj = model.Page(self.keyword, page_url)
-                            conf.page_ready_to_crawl_queue.put(page_obj)
+    # @classmethod
+    # def get(cls, url, headers=conf.HEADERS):
+    #     return super.get(url, cls.HEADERS)
 
-                if 'objURL' in item:
-                    # 图片的原始地址 done:判断该图片是否已爬取 如果没有爬取就添加到消费队列
-                    img_url = self.parse_encrypt_url(item['objURL'])
-                    if img_url not in conf.img_crawled_set:
-                        img_obj = model.Img(self.keyword, page_url, img_url)
-                        conf.img_ready_to_crawl_queue.put(img_obj)  # 添加到消费队列
+    @classmethod
+    def extract(cls, response):
+        json_content=response.json()
+        res = json_content.get('data', [])
+        data_list = []
+        for item in res:
+            if item:
+                origin_img_url = cls.parse_encrypt_url(item.get('objURL', ''))  # 原图地址
+                thumb_img_url = cls.parse_encrypt_url(item.get('objURL', ''))  # 缩略图地址
+                page_url = cls.parse_encrypt_url(item.get('fromURL', ''))  #
+                item = {
+                    'origin_img_url': origin_img_url,
+                    'thumb_img_url': thumb_img_url,
+                    'page_url': page_url
+                }
+                data_list.append(item)
+        return data_list
 
-            conf.api_crawled_set.add(url)  # 该url已爬取
-            if len(data_list) < per_page:  # or page_num >= 60:  # 最后一页
-                # conf.my_api_pickle.dump(conf.api_crawled_set)  # 写入文件
-                conf.img_spider_logger.info(f'func get_page_url_by_keyword done,get {len(page_set)} url(s).')
-                break
 
-            page_num += per_page
-        conf.img_spider_logger.info(
-            f'keyword:{self.keyword},get {page_num} page(s),get {len(page_set)} page_url(s).')
 
     # 通过以图搜图的方式来获取相应的page链接
     @utils.clocked
@@ -129,8 +114,8 @@ class BaiduSpider(BaseSpider):
 async def baidu_spider(keyword: str):
     baidu_spider = BaiduSpider(keyword)
     await asyncio.gather(
-        baidu_spider.get_page_url_by_keyword(),
-        baidu_spider.get_img_url_on_page(),
+        baidu_spider.get_page_and_img_by_keyword(),  # 从接口中获取图片地址和页面地址
+        # baidu_spider.get_img_url_on_page(),
         baidu_spider.download_imgs()
     )  # 并发运行
 
@@ -138,7 +123,8 @@ async def baidu_spider(keyword: str):
 # 执行
 def run_baidu_spider(keyword: str):
     asyncio.run(baidu_spider(keyword))
+    # conf.img_spider_logger.error(f'baidu_speider done,because of error:{e}...')
 
 
 if __name__ == '__main__':
-    run_baidu_spider('')
+    pass
