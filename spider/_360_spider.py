@@ -4,7 +4,7 @@
 
 import asyncio
 from .base_spider import BaseSpider
-
+from typing import List
 
 # 关键字爬虫：根据关键字，爬取相关页面，产出imgurl
 class _360Spider(BaseSpider):
@@ -15,7 +15,7 @@ class _360Spider(BaseSpider):
 
     # 3.抽取规则，从接口响应的数据中抽取出图片和页面的地址
     @classmethod
-    def extract(cls, response):
+    def extract(cls, response)->List[dict]:
         json_content = response.json()
         res = json_content['list']
         data_list = []

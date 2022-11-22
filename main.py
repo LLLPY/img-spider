@@ -19,11 +19,11 @@ def main():
     # keyword = '雪山'
     th_pool = ThreadPoolExecutor(10)
     # 每类爬虫单独启一个线程
-    th_pool.submit(baidu_spider.run_baidu_spider,keyword)  # 百度爬虫
-    th_pool.submit(_360_spider.run_360_spider,keyword)  # 360爬虫
+    # th_pool.submit(baidu_spider.run_baidu_spider,keyword)  # 百度爬虫
+    # th_pool.submit(_360_spider.run_360_spider,keyword)  # 360爬虫
     th_pool.submit(bing_spider.run_bing_spider,keyword)  # bing爬虫
-    th_pool.submit(sougou_spider.run_sougou_spider,keyword)  # 搜狗爬虫
-    th_pool.submit(chinaso_spider.run_chinaso_spider,keyword)  # 中国搜索爬虫
+    # th_pool.submit(sougou_spider.run_sougou_spider,keyword)  # 搜狗爬虫
+    # th_pool.submit(chinaso_spider.run_chinaso_spider,keyword)  # 中国搜索爬虫
     th_pool.shutdown()
 
 

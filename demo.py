@@ -82,11 +82,38 @@ def test_requests(url):
     res = requests.get(url, headers=headers, verify=False, timeout=5)
     print(res.text)
 
+import time
+import functools
+def clocked(func):
 
+    @functools.wraps(func)
+    async def clock_it(*args,**kwargs):
+        
+        start=time.time_ns()
+        res= await func(*args,**kwargs)
+        end=time.time_ns()
+
+        print(f'func[{func.__name__}] costs {(end-start)/1000000000} s')
+        return res
+    return  clock_it
+
+def test_set():
+    a={1,2,3,4}
+    a.discard(2)
+    print(a)
+
+@clocked
+async def foo():
+    for i in range(5):
+        await asyncio.sleep(1)
+        print(i)
 
 if __name__ == '__main__':
+    # test_set()
     # asyncio.run(demo())
     # import random
     # print(random.uniform(1,10))
-    process_txt()
+    # process_txt()
     # test_requests('https://image.so.com/j?q=%E7%BE%8E%E5%A5%B3&qtag=&pd=1&pn=60&adstar=0&tab=all&sid=15d39fba0b6f9e26589eed4f9434a0c5&ras=6&cn=0&gn=0&kn=11&crn=0&bxn=20&cuben=0&pornn=0&manun=4&sn=1&ps=1&pc=50')
+    # foo()
+    asyncio.run(foo())
