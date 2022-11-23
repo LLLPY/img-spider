@@ -36,7 +36,7 @@ class BaseSpider:
     def get(cls, url, headers=conf.HEADERS):
         success = True
         try:
-            res = requests.get(url, headers=headers, verify=False, timeout=5)
+            res = requests.get(url, headers=headers, verify=False, timeout=(5,10))
         except Exception as e:
             conf.img_spider_logger.error(f'请求失败,失败原因:{e},url:{url}')
             res = None
@@ -61,7 +61,7 @@ class BaseSpider:
     @staticmethod
     def chrome_get(url):
         chrome_options = webdriver.ChromeOptions()
-        # chrome_options.add_argument('--headless')
+        # chrome_options.add_argument('--headless') #无头浏览器
         chrome_driver = webdriver.Chrome(chrome_options=chrome_options, service=conf.CHROMEDRIVER_SERVICE)
         chrome_driver.get(url)
         time.sleep(1)
@@ -71,38 +71,46 @@ class BaseSpider:
 
     # 根据获取一个page上的img链接
     async def get_img_url_on_page(self):
+        
+        conf.img_spider_logger.warning(f'{self.__class__.__name__}开始抓取页面上的链接...')
         while True:
-            await asyncio.sleep(0)  # 让出cpu
-
-            page_obj = conf.page_ready_to_crawl_queue.get()
-            success, res = self.get(page_obj.url)
-            # if not success:
-            #     conf.page_crawled_set.add(page_obj.url)  # 不成功就添加到已爬取的集合中
-            #     conf.img_spider_logger.warning(f'get img url failed from page:{page_obj.url}')
-            #     continue
-            # html = res.text
-            # html=self.chrome_get(page_obj.url)
-            _, html = self.urlretrieve_get(page_obj.url,
-                                           hashlib.sha1(str(page_obj.url).encode('utf8')).hexdigest() + '.html')
-            relate_links = self.get_pre_and_next_links(html)
-            conf.img_spider_logger.info(f'page:{page_obj.url}\n,relate_links:{relate_links}')
-
-            try:
-                e = etree.HTML(html)
-                img_list = e.xpath('//body//img/@src')
-                crawled_n = 0
-                for img in img_list:
-                    img_obj = model.Img(self.keyword, page_obj.url, img)
-                    if img not in conf.img_crawled_set:
-                        conf.img_ready_to_crawl_queue.put(img_obj)
-                    else:
-                        crawled_n += 1
-                conf.img_spider_logger.info(
-                    f'keyword:{self.keyword},extract done，get {len(img_list)} img(s), {crawled_n} have been crawled.page url:{page_obj.url}')
-            except Exception as e:
-                conf.img_spider_logger.warning(
-                    f'keyword:{self.keyword},page url:{page_obj.url},extract failed,error info:{e}')
-            conf.page_crawled_set.add(page_obj.url)  # 不管数据有没有抽取成功，都添加到已爬取的集合中
+            
+            #让出cpu
+            await asyncio.sleep(0)
+            if not conf.page_ready_to_crawl_queue.empty():
+                conf.img_spider_logger.info(f'qsize:{conf.page_ready_to_crawl_queue.qsize()}')
+                page_obj = conf.page_ready_to_crawl_queue.get()
+                print(page_obj.url)
+                res,success  = self.get(page_obj.url)
+                if not success:
+                    conf.page_crawled_set.add(page_obj.url)
+                    conf.img_spider_logger.warning(f'页面请求失败:{page_obj.url}')
+                else:
+                    html = res.text
+                    #上一页和下一页的链接
+                    host=page_obj.url.split('/',1)[0]
+                    relate_links = self.get_pre_and_next_links(html)
+                    if relate_links:
+                        for sub_url in relate_links:
+                            print(f'{host}/{sub_url}')
+                    conf.img_spider_logger.info(f'page:{page_obj.url}\n,relate_links:{relate_links}')
+                    e = etree.HTML(html)
+                    img_list = e.xpath('//body//img/@src')
+                    for img in img_list:
+                        if img not in conf.img_crawled_set and img not in conf.img_ready_set:
+                            img_obj = model.Img(self.keyword, page_obj.url, img)
+                            conf.img_ready_to_crawl_queue.put(img_obj)
+                    conf.img_spider_logger.info(f'图片抽取成功,keyword:{self.keyword},抽取到了{len(img_list)}张图片链接,页面地址:{page_obj.url}')
+                    conf.page_crawled_set.add(page_obj.url)  # 不管数据有没有抽取成功，都添加到已爬取的集合中
+            else:        
+                #结束
+                for _ in range(15):
+                        await asyncio.sleep(1)
+                        if not conf.page_ready_to_crawl_queue.empty():
+                            break
+                else:
+                    conf.img_spider_logger.warning(f'{self.__class__.__name__}图片抽取结束...')
+                    break
 
     # 下载图片
     @classmethod
@@ -198,6 +206,7 @@ class BaseSpider:
     # 结束规则
     @classmethod
     def done(cls, data_list, per_page_count):
+        return True
         return len(data_list) == 0
 
     # 公共处理爬虫
@@ -244,9 +253,7 @@ class BaseSpider:
                 origin_img_url = item['origin_img_url']  # 原图
                 thumb_img_url = item['thumb_img_url']  # 缩略图
                 page_url = item['page_url']  # 图片所在的页面
-                if origin_img_url in conf.img_ready_set or origin_img_url in conf.img_crawled_set:
-                    continue
-                
+                    
                 # 统计
                 origin_img_url_set.add(origin_img_url)
                 thumb_img_url_set.add(thumb_img_url)
@@ -257,21 +264,23 @@ class BaseSpider:
                 tmp_page_url_set.add(page_url)
 
                 # 4. 将page添加到消费队列
-                if page_url not in conf.page_crawled_set:
+                if page_url not in conf.page_crawled_set and page_url not in conf.page_ready_set:
                     page_obj = model.Page(keyword, page_url)
+                    conf.page_ready_set.add(page_url)
                     conf.page_ready_to_crawl_queue.put(page_obj)
 
                 # 5.将img添加到消费队列
-                img_obj = model.Img(keyword, page_url, origin_img_url)
-                conf.img_ready_set.add(origin_img_url)
-                conf.img_ready_to_crawl_queue.put(img_obj)
+                if origin_img_url not in conf.img_ready_set and origin_img_url not in conf.img_crawled_set:
+                    img_obj = model.Img(keyword, page_url, origin_img_url)
+                    conf.img_ready_set.add(origin_img_url)
+                    conf.img_ready_to_crawl_queue.put(img_obj)
                 
 
             # 6.结束 最后一页
             if done_func(data_list, per_page_count):
                 end=time.time_ns()
                 conf.img_spider_logger.warning(
-                    f'{spider_name}api抓取结束,一共抓取了{len(origin_img_url_set)}原始图片链接,{len(thumb_img_url_set)}个缩略图片链接,{len(page_url_set)}个页面链接,耗时:{(end-start)/1000000000}...')
+                    f'{spider_name}-api抓取结束,一共抓取了{len(origin_img_url_set)}原始图片链接,{len(thumb_img_url_set)}个缩略图片链接,{len(page_url_set)}个页面链接,耗时:{(end-start)/1000000000}...')
                 break
             
             tmp_end=time.time_ns()
