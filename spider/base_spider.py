@@ -15,13 +15,16 @@ import re
 import time
 from selenium import webdriver
 import socket
-socket.setdefaulttimeout(6) #设置timeout时间为6秒
-sys.path.append(f'..{os.sep}')
 
+#设置timeout时间为6秒
+socket.setdefaulttimeout(6) 
+
+sys.path.append(f'..{os.sep}')
 import conf.conf as conf
 import conf.model as model
 
-requests.packages.urllib3.disable_warnings()  # 关闭警告
+# 关闭警告
+requests.packages.urllib3.disable_warnings()  
 
 
 class BaseSpider:
@@ -96,6 +99,7 @@ class BaseSpider:
                     conf.img_spider_logger.info(f'page:{page_obj.url}\n,relate_links:{relate_links}')
                     e = etree.HTML(html)
                     img_list = e.xpath('//body//img/@src')
+                    
                     for img in img_list:
                         if img not in conf.img_crawled_set and img not in conf.img_ready_set:
                             img_obj = model.Img(self.keyword, page_obj.url, img)
@@ -197,6 +201,10 @@ class BaseSpider:
             tmp_res = re.findall(pattern.format(tag), html, re.IGNORECASE)
             res.extend(tmp_res)
         return list(set(res))
+
+    def get_page_links(html):
+        pattern = r'<a.*href="(.*?)".*<img.*</a>'
+        re.findall(pattern,html,re.IGNORECASE)
 
     # 抽取规则
     @classmethod

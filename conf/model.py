@@ -39,8 +39,9 @@ class Img:
         STATUS_CRAWLED: '已爬取'
     }
 
-    def __init__(self, keyword, page_url,  url=None, crawl_time=datetime.datetime.now(), status=1):
-        self.url = url
+    def __init__(self, keyword, page_url,  url=None,thumb_url=None ,crawl_time=datetime.datetime.now(), status=1):
+        self.url = url #原图
+        self.thumb_url=thumb_url #缩略图
         self.keyword = keyword  # 所属分类，根据哪个关键字爬取的就是哪个分类
         self.uid = uuid.uuid3(uuid.NAMESPACE_URL, self.url).hex   # 唯一标识
         self.status = status  # 爬取状态
