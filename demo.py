@@ -118,8 +118,9 @@ def get_page_links(html):
 
 
 def fooo(a):
-    a.add(5)
-    a.discard(1)
+    # a=set()
+    a.clear()
+    # a.discard(1)
 
 
 if __name__ == '__main__':
