@@ -9,7 +9,7 @@ import selenium.webdriver.chrome.service as chrome_service
 sys.path.append('..' + os.sep)
 import log.logger as log
 import file_system.file_system as file_system
-
+import client.client as client
 # 指定driver的位置
 CHROMEDRIVER_SERVICE = chrome_service.Service('chromedriver.exe')
 
@@ -51,3 +51,6 @@ img_spider_logger = log.MyLogger().get_logger()
 HEADERS = {
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/100.0.4896.60 Safari/537.36',
 }
+
+#客户端
+img_client=client.Client()

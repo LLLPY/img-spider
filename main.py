@@ -2,7 +2,7 @@
 # @Author  ：LLL                         
 # @Date    ：2022/11/6 22:05  
 
-from spider import baidu_spider, _360_spider, bing_spider, sougou_spider, chinaso_spider
+from spider import baidu_spider, _360_spider, bing_spider, sougou_spider, chinaso_spider,base_spider
 from concurrent.futures import ThreadPoolExecutor
 
 
@@ -24,8 +24,16 @@ def main():
     # th_pool.submit(bing_spider.run_bing_spider,keyword)  # bing爬虫
     # th_pool.submit(sougou_spider.run_sougou_spider,keyword)  # 搜狗爬虫
     # th_pool.submit(chinaso_spider.run_chinaso_spider,keyword)  # 中国搜索爬虫
+    th_pool.submit() #定时定量上传图片到服务器
     th_pool.shutdown()
 
 
 if __name__ == '__main__':
-    main()
+    # main()
+    img_list=[
+        {
+            'url':'www.lll.plus',
+            'thumb_url':'www.lll.plus',
+        }
+    ]
+    base_spider.BaseSpider.do_upload_img(img_list)

@@ -11,6 +11,7 @@ class ImgAdmin(admin.ModelAdmin):
     save_on_bottom=True
     list_select_related=True
     save_as=True
+    search_fields=['keyword']
     list_display=['id',
                   'keyword',
                 'status',

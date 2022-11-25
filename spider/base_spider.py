@@ -255,6 +255,7 @@ class BaseSpider:
             
             # 3.数据抽取，从接口响应的数据中抽取出图片和页面的地址，不同的借口对应不同的抽取规则
             data_list = extract_func(res)
+            
             conf.img_spider_logger.info(f'抓取了{len(data_list)}个items从{spider_name}-api:{api_url}')
 
             for item in data_list:
@@ -309,6 +310,32 @@ class BaseSpider:
         API_url = self.API
         await self.common_spider(spider_name, keyword, page_num, per_page_count, API_url, self.extract, self.done)
 
+    
+    @classmethod
+    async def do_upload_img():
+        conf.img_spider_logger.warning(f'图片上传服务已启动...')
+        now=time.time()
+        while True:
+            await asyncio.sleep(1)
+            end=time.time()
+            #每10秒或者已爬取的图片集合数量大于50
+            if (end-now) > 10 or len(conf.img_crawled_set) > 50:
+                res=conf.img_client.upload_img(list(conf.img_crawled_set))
+                print(res)
+                conf.img_spider_logger.info(f'图片上传成功,上传了{len(conf.img_crawled_set)}张图片...')
+                #重置时间
+                now=time.time() 
+            
+            #结束
+            for _ in range(20):
+                await asyncio.sleep(1)
+                if len(conf.img_crawled_set)>0:
+                    break
+            else:
+                conf.img_spider_logger.warning('图片上传服务已退出...')
+                break
+    
+    
 
 if __name__ == '__main__':
     spider = BaseSpider('大海')
