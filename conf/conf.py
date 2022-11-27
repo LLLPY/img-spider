@@ -5,13 +5,17 @@ import queue
 import os
 import sys
 import selenium.webdriver.chrome.service as chrome_service
+import selenium.webdriver as webdriver
+import socket
 
 sys.path.append('..' + os.sep)
 import log.logger as log
 import file_system.file_system as file_system
 import client.client as client
-# 指定driver的位置
-CHROMEDRIVER_SERVICE = chrome_service.Service('chromedriver.exe')
+
+
+# 设置timeout时间为6秒
+socket.setdefaulttimeout(6)
 
 # workdir
 workdir = os.path.abspath('.')  # 工作目录
@@ -34,15 +38,14 @@ api_crawled_set = my_api_crawled_pickle.load()
 page_crawled_set = my_page_crawled_pickle.load()
 img_crawled_set = my_img_crawled_pickle.load()
 
-
 my_api_ready_pickle = file_system.MyPickle(os.path.join(workdir, 'data', 'set', 'api_ready_set'))
 my_page_ready_pickle = file_system.MyPickle(os.path.join(workdir, 'data', 'set', 'page_ready_set'))
 my_img_ready_pickle = file_system.MyPickle(os.path.join(workdir, 'data', 'set', 'img_ready_set'))
+my_img_pickle = file_system.MyPickle(os.path.join(workdir, 'data', 'set', 'img_set'))
 api_ready_set = my_api_ready_pickle.load()
 page_ready_set = my_page_ready_pickle.load()
 img_ready_set = my_img_ready_pickle.load()
-
-
+img_set = my_img_pickle.load()
 
 # 日志器
 img_spider_logger = log.MyLogger().get_logger()
@@ -52,5 +55,13 @@ HEADERS = {
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/100.0.4896.60 Safari/537.36',
 }
 
-#客户端
-img_client=client.Client()
+# 客户端
+img_client = client.Client()
+
+# selenium相关配置
+
+# 指定driver的位置
+CHROMEDRIVER_SERVICE = chrome_service.Service('./chromedriver')
+chrome_options = webdriver.ChromeOptions()
+chrome_options.add_argument('--ignore-certificate-errors')
+# chrome_options.add_argument('headless')

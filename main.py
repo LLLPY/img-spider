@@ -2,8 +2,9 @@
 # @Author  ：LLL                         
 # @Date    ：2022/11/6 22:05  
 
-from spider import baidu_spider, _360_spider, bing_spider, sougou_spider, chinaso_spider,base_spider
+from keyword_spider import baidu_spider, _360_spider, bing_spider, sougou_spider, chinaso_spider, base_spider
 from concurrent.futures import ThreadPoolExecutor
+from img_spider import baidu_spider
 
 
 # 程序启动接口
@@ -19,16 +20,16 @@ def main():
     # keyword = '雪山'
     th_pool = ThreadPoolExecutor(10)
     # 每类爬虫单独启一个线程
-    th_pool.submit(baidu_spider.run_baidu_spider,keyword)  # 百度爬虫
-    th_pool.submit(_360_spider.run_360_spider,keyword)  # 360爬虫
-    th_pool.submit(bing_spider.run_bing_spider,keyword)  # bing爬虫
-    th_pool.submit(sougou_spider.run_sougou_spider,keyword)  # 搜狗爬虫
-    th_pool.submit(chinaso_spider.run_chinaso_spider,keyword)  # 中国搜索爬虫
-    th_pool.submit(base_spider.run_timed_task()) #定时定量上传图片到服务器
+    th_pool.submit(baidu_spider.run_baidu_spider, keyword)  # 百度爬虫
+    th_pool.submit(_360_spider.run_360_spider, keyword)  # 360爬虫
+    th_pool.submit(bing_spider.run_bing_spider, keyword)  # bing爬虫
+    th_pool.submit(sougou_spider.run_sougou_spider, keyword)  # 搜狗爬虫
+    th_pool.submit(chinaso_spider.run_chinaso_spider, keyword)  # 中国搜索爬虫
+    th_pool.submit(base_spider.run_timed_task)  # 定时定量上传图片到服务器
     th_pool.shutdown()
 
 
 if __name__ == '__main__':
-    main()
-
-
+    # main()
+    baidu_spider = baidu_spider.BaiduSpider('美女')
+    baidu_spider.get_img_link_by_img()

@@ -1,4 +1,4 @@
-#!/Users/lll/Desktop/python/img-spider/venv/bin/python3
+#!/Users/lll/Desktop/python/img-keyword_spider/venv/bin/python3
 from __future__ import print_function, unicode_literals
 import argparse
 import sys
