@@ -8,6 +8,52 @@ from selenium.webdriver import Chrome
 from selenium.webdriver.common.by import By
 from concurrent.futures import ThreadPoolExecutor
 
+# 工人
+class ChromeWorker:
+    STATUS_READY = 0
+    STATUS_RUNNING = 1
+    STATUS_DONE = 2
+
+    def __init__(self):
+        self.status = self.STATUS_READY  # 0:待启动 1:运行中 2:运行结束
+        self.chrome=Chrome()
+        self.result = None
+
+    # 启动
+    def start(self,img_obj):
+        self.status = self.STATUS_RUNNING
+        res = self.chrome.get(img_obj.url)
+        self.status = self.STATUS_DONE
+        return res
+
+    def is_ready(self):
+        return self.status == self.STATUS_READY
+
+    # callback
+    def done(self, msg):
+        res = msg.result()
+        self.status = self.STATUS_READY
+
+
+# 监工
+class ChromeWorkerManager:
+
+    instance = None
+
+    def __init__(self, workrom_size=5):
+        self.workroom = [ChromeWorker('') for _ in range(workrom_size)]
+
+    # 分配任务
+    def dispatch(self, url_list):
+        th_pool = ThreadPoolExecutor(len(self.workroom))
+        for i in range(len(self.workroom)):
+            if self.workroom[i].is_ready() and url_list:
+                self.workroom[i].url = url_list.pop()
+                future = th_pool.submit(self.workroom[i].start)
+                future.add_done_callback(self.workroom[i].done)
+        th_pool.shutdown()
+
+
 
 # 以图搜图
 class BaseSpider:
@@ -26,6 +72,10 @@ class BaseSpider:
     # 客户端
     client = conf.img_client
 
+    
+    #chrome池,通过chrome请求网页
+    chrome_pool=ChromeWorkerManager(5)
+    
     # 初始化时只需要知道keyword即可
     def __init__(self, keyword):
         self.keyword = keyword
