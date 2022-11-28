@@ -22,7 +22,7 @@ class BaiduSpider(BaseSpider):
 
     # 通过图片搜索，获取相似图片的页面，提取页面中相似图片所在的页面链接
     def get_img_link_by_img(self):
-        img_url = 'https://img2.baidu.com/it/u=2898829455,2734408317&fm=253&fmt=auto&app=120&f=JPEG?w=1280&h=800'
+        img_url = 'https://gimg2.baidu.com/image_search/src=http%3A%2F%2Fuploadfile.bizhizu.cn%2F2014%2F0114%2F20140114051217718.jpg&refer=http%3A%2F%2Fuploadfile.bizhizu.cn&app=2002&size=f9999,10000&q=a80&n=0&g=0n&fmt=auto?sec=1672236355&t=9ac7a0c2bc05efc111c74ee8a14ac82f'
         self.chrome.get(self.API_URL)
         self.chrome.find_element(By.XPATH, self.CAMERA_XPATH).click()
         self.chrome.find_element(By.XPATH, self.INPUT_XPATH).send_keys(img_url)
@@ -42,7 +42,9 @@ class BaiduSpider(BaseSpider):
             for item in item_set:
                 page_url = item.get_attribute('href')  # 节点的属性值
                 if page_url not in upload_page_set:
+                    # 该页面需要再次去访问才能拿到原图的页面链接
                     page_obj = model.Page(self.keyword, page_url, source=self.SOURCE)
+
                     page_list.append(page_obj.to_dict())
                     upload_page_set.add(page_url)
 

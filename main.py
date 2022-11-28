@@ -31,5 +31,5 @@ def main():
 
 if __name__ == '__main__':
     # main()
-    baidu_spider = baidu_spider.BaiduSpider('美女')
+    baidu_spider = baidu_spider.BaiduSpider('雪山')
     baidu_spider.get_img_link_by_img()
