@@ -7,7 +7,8 @@ from queue import Queue
 from selenium.webdriver import Chrome
 from selenium.webdriver.common.by import By
 from concurrent.futures import ThreadPoolExecutor
-
+import re
+import conf.model as model
 # 工人
 class ChromeWorker:
     STATUS_READY = 0
@@ -57,6 +58,9 @@ class ChromeWorkerManager:
 
 # 以图搜图
 class BaseSpider:
+    
+    HEADERS = conf.HEADERS
+    
     # js注入
     # 间隔一定时间将页面下拉,用于加载更多的图片
     setInterval_js = 'scroll_page=setInterval(function(){document.documentElement.scrollTop=10000000000000000},2000)'
@@ -86,3 +90,26 @@ class BaseSpider:
             self.chrome.close()
         except Exception as e:
             conf.img_spider_logger.error(f'浏览器窗口关闭失败...错误原因:{e}')
+    
+    #抽取页面内容
+    def extract_page(self,page_obj,page_html):
+        pattern = r'<a.*href="(.*?)".*<img.*src="(.*?)".*</a>'
+        host=page_obj.url.split('/',1)[0]
+        thumb_url_set=set()
+        #匹配缩略图和页面链接
+        page_thumb_list=re.findall(pattern,page_html)
+        for page_thumb in page_thumb_list:
+            page_url=page_thumb[0].strip('/')
+            page_url=f'{host}/{page_url}'
+            page=model.Page(page_url)
+            thumb_url=page_thumb[1]
+            thumb_url_set.add(thumb_url)
+            img=model.Img(page_url,thumb_url,thumb_url)
+            
+        #匹配原图    
+        img_list=re.findall(r'<img.*src="(.*?)".*>',page_html)
+        for img in img_list:
+            if img not in  thumb_url_set:
+                img_obj=model.Img(page_obj.url,img,img)
+                
+        
