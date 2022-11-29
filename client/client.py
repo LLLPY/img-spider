@@ -45,7 +45,7 @@ class Client:
         data = {
             'img_list': json.dumps(img_list),
         }
-        json_content = self.post(url, data=data)
+        json_content = self.post(url, data=data).json()
 
         return json_content
 
@@ -95,8 +95,7 @@ class Client:
         data = {
             'page_list': json.dumps(page_list),
         }
-        json_content = self.post(url, data=data)
-
+        json_content = self.post(url, data=data).json()
         return json_content
 
 

@@ -22,13 +22,14 @@ class BaiduSpider(BaseSpider):
 
     # 通过图片搜索，获取相似图片的页面，提取页面中相似图片所在的页面链接
     def get_img_link_by_img(self):
-        img_url = 'https://gimg2.baidu.com/image_search/src=http%3A%2F%2Fuploadfile.bizhizu.cn%2F2014%2F0114%2F20140114051217718.jpg&refer=http%3A%2F%2Fuploadfile.bizhizu.cn&app=2002&size=f9999,10000&q=a80&n=0&g=0n&fmt=auto?sec=1672236355&t=9ac7a0c2bc05efc111c74ee8a14ac82f'
+        img_url = 'https://gimg2.baidu.com/image_search/src=http%3A%2F%2Fpic1.win4000.com%2Fmobile%2F2020-09-03%2F5f50634238266.jpg&refer=http%3A%2F%2Fpic1.win4000.com&app=2002&size=f9999,10000&q=a80&n=0&g=0n&fmt=auto?sec=1672318723&t=28f4d9ecac67cbd61a721593fc937529'
         self.chrome.get(self.API_URL)
         self.chrome.find_element(By.XPATH, self.CAMERA_XPATH).click()
         self.chrome.find_element(By.XPATH, self.INPUT_XPATH).send_keys(img_url)
         self.chrome.find_element(By.XPATH, self.BUTTON_XPATH).click()
+
         # 等待3秒用于加载
-        time.sleep(3)
+        time.sleep(5)
 
         # 启动页面下拉定时器
         self.chrome.execute_script(self.setInterval_js)
