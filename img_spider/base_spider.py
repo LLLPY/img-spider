@@ -9,13 +9,9 @@ from queue import Queue
 from selenium.webdriver import Chrome
 from selenium.webdriver.common.by import By
 from concurrent.futures import ThreadPoolExecutor
-<<<<<<< HEAD
 import re
 import conf.model as model
-=======
 
-
->>>>>>> 87e2493f54f8f6034fb13486c7192dbc9188b1dd
 # 工人
 class ChromeWorker:
     STATUS_READY = 0
