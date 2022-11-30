@@ -31,7 +31,7 @@ class BaiduSpider(BaseSpider):
 
     @classmethod
     def extract(cls, response):
-        json_content = response.json()
+        json_content = response.json()  # TODO json可能解析失败待解决
         res = json_content.get('data', [])
         data_list = []
         for item in res:
@@ -46,9 +46,8 @@ class BaiduSpider(BaseSpider):
                     'page_url': page_url,
                     'desc': desc
                 }
-                img_hash = model.Img.to_hash(origin_img_url)
-                if img_hash not in conf.img_set:  # conf.img_set用于本地去重,用url的hash值来判断
-                    data_list.append(item)
+
+                data_list.append(item)
         return data_list
 
     # 解析加密的url
@@ -116,7 +115,6 @@ async def baidu_spider(keyword: str):
 # 执行
 def run_baidu_spider(keyword: str):
     asyncio.run(baidu_spider(keyword))
-    # conf.img_spider_logger.error(f'baidu_speider done,because of error:{e}...')
 
 
 if __name__ == '__main__':

@@ -6,6 +6,8 @@ import asyncio
 from .base_spider import BaseSpider
 import conf.model as model
 import conf.conf as conf
+
+
 # 关键字爬虫：根据关键字，爬取相关页面，产出imgurl
 class SouGouSpider(BaseSpider):
     API = 'https://pic.sogou.com/napi/pc/searchList?mode=1&query={}&start={}&xml_len={}'
@@ -23,7 +25,6 @@ class SouGouSpider(BaseSpider):
     }
     SOURCE = '搜狗'
 
-
     def __init__(self, keyword: str) -> None:
         super().__init__(keyword)
 
@@ -31,37 +32,37 @@ class SouGouSpider(BaseSpider):
     def extract(cls, response):
         # 数据抽取
         json_content = response.json()
-        data = json_content['data']
+        data = json_content.get('data',{}) or {}
         data_list = []
         # groupPic_json
         for item in data.get('groupPic_json', []):
             for inner_item in item:
-                origin_img_url = inner_item['picUrl']  # 原图
-                thumb_img_url = inner_item['thumbUrl']  # 缩略图
-                page_url = inner_item['pageUrl']
+                origin_img_url = inner_item.get('picUrl', '')  # 原图
+                thumb_img_url = inner_item.get('thumbUrl', '')  # 缩略图
+                page_url = inner_item.get('pageUrl', '')
+                desc = inner_item.get('title', '')
                 item = {
                     'origin_img_url': origin_img_url,
                     'thumb_img_url': thumb_img_url,
-                    'page_url': page_url
+                    'page_url': page_url,
+                    'desc': desc
                 }
-                img_obj = model.Img('', '', origin_img_url, thumb_img_url)
-                if img_obj not in conf.img_set:
-                    conf.img_set.add(img_obj)
-                    data_list.append(item)
+                data_list.append(item)
 
         # items
         for item in data.get('items', []):
-            origin_img_url = item['oriPicUrl']  # 原图
-            thumb_img_url = item['thumbUrl']  # 缩略图
-            page_url = item['url']  # 原图所在的页面
+            origin_img_url = item.get('oriPicUrl', '')  # 原图
+            thumb_img_url = item.get('thumbUrl', '')  # 缩略图
+            page_url = item.get('url', '')  # 原图所在的页面
+            desc = item.get('title', '')
             item = {
                 'origin_img_url': origin_img_url,
                 'thumb_img_url': thumb_img_url,
-                'page_url': page_url
+                'page_url': page_url,
+                'desc': desc
             }
-            img_obj = model.Img('', '', origin_img_url, thumb_img_url)
-            if img_obj not in conf.img_set:
-                data_list.append(item)
+            data_list.append(item)
+
         return data_list
 
 
@@ -70,7 +71,7 @@ async def sougou_spider(keyword: str):
     await asyncio.gather(
         sougou_spider.get_page_and_img_by_keyword(),
         # _360_spider.get_img_url_on_page(),
-        sougou_spider.download_imgs()
+        # sougou_spider.download_imgs()
     )  # 并发运行
 
 

@@ -39,18 +39,19 @@ class BingSpider(BaseSpider):
         res = re.findall('m="(\{.*?\})"', json_content)
 
         for item in res:
-            item = json.loads(item)
-            origin_img_url = item['murl']  # 原始图
-            thumb_img_url = item['turl']  # 缩略图
-            page_url = item['purl']  # 图片所在的页面
+            item = json.loads(item) or {}
+            origin_img_url = item.get('murl', '')  # 原始图
+            thumb_img_url = item.get('turl', '')  # 缩略图
+            page_url = item.get('purl', '')  # 图片所在的页面
+            desc = item.get('t', '')
             item = {
                 'origin_img_url': origin_img_url,
                 'thumb_img_url': thumb_img_url,
-                'page_url': page_url
+                'page_url': page_url,
+                'desc': desc
             }
-            img_obj = model.Img('', '', origin_img_url, thumb_img_url)
-            if img_obj not in conf.img_set:
-                data_list.append(item)
+
+            data_list.append(item)
         return data_list
 
 

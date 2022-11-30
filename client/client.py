@@ -98,6 +98,15 @@ class Client:
         json_content = self.post(url, data=data).json()
         return json_content
 
+    # 检测重复的uid
+    def check_dup_uid(self, uid_list):
+        url = f'{self.HOST}:{self.PORT}/{self.img_server_prefix}/check_dup_uid/'
+        data = {
+            'uid_list': json.dumps(uid_list),
+        }
+        json_content = self.post(url, data=data).json()
+        return json_content
+
 
 if __name__ == '__main__':
     client = Client()

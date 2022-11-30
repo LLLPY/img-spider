@@ -28,15 +28,15 @@ class _360Spider(BaseSpider):
             origin_img_url = item['img']  # 原图
             thumb_img_url = item['thumb']  # 缩略图
             page_url = item['link']  # 图片所在的页面
+            desc=item['title']
             item = {
                 'origin_img_url': origin_img_url,
                 'thumb_img_url': thumb_img_url,
-                'page_url': page_url
+                'page_url': page_url,
+                'desc':desc
             }
 
-            img_obj = model.Img('', '', origin_img_url, thumb_img_url)
-            if img_obj not in conf.img_set:
-                data_list.append(item)
+            data_list.append(item)
 
         return data_list
 
@@ -46,7 +46,7 @@ async def _360_spider(keyword: str):
     await asyncio.gather(
         _360_spider.get_page_and_img_by_keyword(),
         # _360_spider.get_img_url_on_page(),
-        _360_spider.download_imgs()
+        # _360_spider.download_imgs()
     )  # 并发运行
 
 

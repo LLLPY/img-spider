@@ -238,7 +238,6 @@ class BaseSpider:
             await asyncio.sleep(0)
 
             api_url = API_url.format(keyword, page_num, per_page_count)
-
             # 1.判断该接口是否已经爬取过，如果是已经爬取的url，就不用再爬取了
             if api_url in conf.api_crawled_set:
                 continue
@@ -248,10 +247,12 @@ class BaseSpider:
             if not success:
                 conf.api_crawled_set.add(api_url)  # 将失败的url添加到api_crawled_set集合中
                 continue
-
             # 3.数据抽取，从接口响应的数据中抽取出图片和页面的地址，不同的借口对应不同的抽取规则
+            print(111, api_url)
             data_list = extract_func(res)
-
+            print(22222)
+            # 4.去重 conf.img_set用于本地去重,用url的hash值来判断 #TODO 后期改用服务器去重 check_dup_uid
+            data_list = [img for img in data_list if model.Img.to_hash(img['origin_img_url']) not in conf.img_set]
             cls.logger.info(f'抓取了{len(data_list)}个items从{spider_name}-api:{api_url}')
 
             img_dict_list = []
@@ -276,7 +277,7 @@ class BaseSpider:
                 img_dict_list.append(img_obj.to_dict())
                 page_dict_list.append(page_obj.to_dict())
 
-            # 4.上传页面到服务器
+            # 5.上传页面到服务器
             res = cls.client.upload_page(page_dict_list)
             if res['status'] != 'success':
                 cls.logger.warning(f'页面上传失败...')

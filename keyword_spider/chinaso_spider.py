@@ -7,6 +7,7 @@ from .base_spider import BaseSpider
 import conf.model as model
 import conf.conf as conf
 
+
 # 关键字爬虫：根据关键字，爬取相关页面，产出imgurl
 class ChinaSoSpider(BaseSpider):
     API = 'https://www.chinaso.com/v5/general/v1/search/image?q={}&start_index={}&rn={}'
@@ -24,7 +25,6 @@ class ChinaSoSpider(BaseSpider):
     }
     SOURCE = '中国搜索'
 
-
     def __init__(self, keyword: str) -> None:
         super().__init__(keyword)
 
@@ -35,18 +35,19 @@ class ChinaSoSpider(BaseSpider):
         json_content = response.json()
         res = json_content['data'].get('arrRes', [])
         for item in res:
-            origin_img_url = item['url']
-            thumb_img_url = item['largeimage']
-            page_url = item['web_url']  # 图片所在的页面
+            origin_img_url = item.get('url', '')
+            thumb_img_url = item.get('largeimage', '')
+            page_url = item.get('web_url', '')  # 图片所在的页面
+            desc = item.get('ImageInfo', '')
             item = {
                 'origin_img_url': origin_img_url,
                 'thumb_img_url': thumb_img_url,
-                'page_url': page_url
+                'page_url': page_url,
+                'desc': desc
             }
-            img_obj = model.Img('', '', origin_img_url, thumb_img_url)
-            if img_obj not in conf.img_set:
-                data_list.append(item)
-            return data_list
+
+            data_list.append(item)
+        return data_list
 
 
 async def chinaso_spider(keyword: str):
@@ -54,7 +55,7 @@ async def chinaso_spider(keyword: str):
     await asyncio.gather(
         chinaso_spider.get_page_and_img_by_keyword(),
         # chinaso_spider.get_img_url_on_page(),
-        chinaso_spider.download_imgs()
+        # chinaso_spider.download_imgs()
     )  # 并发运行
 
 
