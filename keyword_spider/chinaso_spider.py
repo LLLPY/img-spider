@@ -22,9 +22,11 @@ class ChinaSoSpider(BaseSpider):
         'sec-fetch-mode': 'cors',
         'sec-fetch-site': 'same-origin'
     }
+    SOURCE = '中国搜索'
+
 
     def __init__(self, keyword: str) -> None:
-        super(ChinaSoSpider, self).__init__(keyword)
+        super().__init__(keyword)
 
     @classmethod
     def extract(cls, response):

@@ -27,7 +27,7 @@ class BaiduSpider(BaseSpider):
     SOURCE = '百度'
 
     def __init__(self, keyword: str) -> None:
-        super(BaiduSpider, self).__init__(keyword)
+        super().__init__(keyword)
 
     @classmethod
     def extract(cls, response):

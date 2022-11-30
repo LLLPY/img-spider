@@ -13,8 +13,10 @@ import conf.conf as conf
 class _360Spider(BaseSpider):
     API = 'https://image.so.com/j?q={}&qtag=&pd=1&pn=60&adstar=0&tab=all&sid=15d39fba0b6f9e26589eed4f9434a0c5&ras=6&cn=0&gn=0&kn=11&crn=0&bxn=20&cuben=0&pornn=0&manun=4&sn={}&pc={}'
 
+    SOURCE = '360'
+
     def __init__(self, keyword: str) -> None:
-        super(_360Spider, self).__init__(keyword)
+        super().__init__(keyword)
 
     # 3.抽取规则，从接口响应的数据中抽取出图片和页面的地址
     @classmethod

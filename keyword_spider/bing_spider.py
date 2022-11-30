@@ -25,9 +25,10 @@ class BingSpider(BaseSpider):
         'sec-fetch-mode': 'cors',
         'sec-fetch-site': 'same-origin'
     }
+    SOURCE = 'bing'
 
     def __init__(self, keyword: str) -> None:
-        super(BingSpider, self).__init__(keyword)
+        super().__init__(keyword)
 
     @classmethod
     def extract(cls, response):

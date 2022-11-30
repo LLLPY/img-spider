@@ -21,9 +21,11 @@ class SouGouSpider(BaseSpider):
         'sec-fetch-mode': 'cors',
         'sec-fetch-site': 'same-origin'
     }
+    SOURCE = '搜狗'
+
 
     def __init__(self, keyword: str) -> None:
-        super(SouGouSpider, self).__init__(keyword)
+        super().__init__(keyword)
 
     @classmethod
     def extract(cls, response):

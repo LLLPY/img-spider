@@ -276,7 +276,7 @@ class BaseSpider:
                 img_dict_list.append(img_obj.to_dict())
                 page_dict_list.append(page_obj.to_dict())
 
-            # 上传页面到服务器
+            # 4.上传页面到服务器
             res = cls.client.upload_page(page_dict_list)
             if res['status'] != 'success':
                 cls.logger.warning(f'页面上传失败...')
