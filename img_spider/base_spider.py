@@ -11,6 +11,7 @@ from selenium.webdriver.common.by import By
 from concurrent.futures import ThreadPoolExecutor
 import re
 import conf.model as model
+from urllib.request import urlretrieve
 
 
 # 工人
@@ -118,3 +119,70 @@ class BaseSpider:
         for img in img_list:
             if img not in thumb_url_set:
                 img_obj = model.Img(page_obj.url, img, img)
+    
+    @staticmethod
+    def download_img_callback(msg):
+        result = msg.result()
+        status = result['status']
+        success = ['失败', '成功'][status]
+        msg = result['msg']
+        img_obj = result['img_obj'] #TODO
+        BaseSpider.logger.info(
+            f'下载{success},msg:{msg},剩余{conf.img_queue.qsize()}待爬取...img_url:{img_obj.url}')
+
+     # 下载图片
+    @classmethod
+    def download_img(cls, img_obj: model.Img):
+        # 创建下载目录
+        dirs = img_obj.save_path.rsplit(os.sep, 1)[0]
+        if not os.path.isdir(dirs):
+            os.makedirs(dirs)
+        success = True
+        msg = ''
+        try:
+            urlretrieve(img_obj.url, img_obj.save_path)
+        except Exception as e:
+            msg = e
+            success = False
+        ###############################################################################################################
+
+        # try:
+        #     async with aiohttp.ClientSession() as session:
+        #         aiohttp.ClientTimeout(5)  # 最大等待时间为5秒
+        #         async with session.get(img_obj.url, headers=conf.HEADERS) as res:
+        #             dirs = img_obj.save_path.rsplit(os.sep, 1)[0]
+        #             if not os.path.isdir(dirs):
+        #                 os.makedirs(dirs)
+        #             async with aiofiles.open(img_obj.save_path, 'wb') as f:
+        #                 content = await res.content.read()
+        #                 await f.write(content)
+        # except Exception as e:
+        # msg=e
+
+        return {'status': success, 'msg': msg, 'img_obj': img_obj}
+
+
+      # 下载图片
+    def download_imgs(self):
+        self.logger.warning(f'{self.__class__.__name__}开始下载图片...')
+        th_pool=ThreadPoolExecutor(5)
+        while True:
+            for _ in range(5):  # 每次启动5个任务去下载图片
+                if not conf.img_queue.empty():
+                    img_obj = conf.img_queue.get()
+                    th_pool.submit(self.do_upload_img,img_obj)
+
+            # 等待当前批次的下载任务完成之后再进行下一批次的任务进行
+            th_pool.shutdown()
+
+            # 结束下载
+            if conf.img_queue.empty():
+                # 如果连续15秒内队列中都没有新的数据，就结束爬取
+                for _ in range(15):
+                    time.sleep(1)
+                    if not conf.img_queue.empty():
+                        break
+                else:
+                    self.logger.warning(f'{self.__class__.__name__}图片下载结束...')
+                    break
+            

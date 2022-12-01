@@ -69,9 +69,8 @@ class SouGouSpider(BaseSpider):
 async def sougou_spider(keyword: str):
     sougou_spider = SouGouSpider(keyword)
     await asyncio.gather(
-        sougou_spider.get_page_and_img_by_keyword(),
+        sougou_spider.get_page_and_img_on_api(),
         # _360_spider.get_img_url_on_page(),
-        # sougou_spider.download_imgs()
     )  # 并发运行
 
 

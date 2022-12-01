@@ -44,9 +44,8 @@ class _360Spider(BaseSpider):
 async def _360_spider(keyword: str):
     _360_spider = _360Spider(keyword)
     await asyncio.gather(
-        _360_spider.get_page_and_img_by_keyword(),
+        _360_spider.get_page_and_img_on_api(),
         # _360_spider.get_img_url_on_page(),
-        # _360_spider.download_imgs()
     )  # 并发运行
 
 

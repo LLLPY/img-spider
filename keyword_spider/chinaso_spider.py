@@ -53,9 +53,8 @@ class ChinaSoSpider(BaseSpider):
 async def chinaso_spider(keyword: str):
     chinaso_spider = ChinaSoSpider(keyword)
     await asyncio.gather(
-        chinaso_spider.get_page_and_img_by_keyword(),
+        chinaso_spider.get_page_and_img_on_api(),
         # chinaso_spider.get_img_url_on_page(),
-        # chinaso_spider.download_imgs()
     )  # 并发运行
 
 

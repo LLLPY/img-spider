@@ -58,9 +58,8 @@ class BingSpider(BaseSpider):
 async def bing_spider(keyword: str):
     bing_spider = BingSpider(keyword)
     await asyncio.gather(
-        bing_spider.get_page_and_img_by_keyword(),
+        bing_spider.get_page_and_img_on_api(),
         # _360_spider.get_img_url_on_page(),
-        bing_spider.download_imgs()
     )  # 并发运行
 
 

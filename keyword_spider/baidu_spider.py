@@ -106,9 +106,8 @@ class BaiduSpider(BaseSpider):
 async def baidu_spider(keyword: str):
     baidu_spider = BaiduSpider(keyword)
     await asyncio.gather(
-        baidu_spider.get_page_and_img_by_keyword(),  # 从接口中获取图片地址和页面地址
+        baidu_spider.get_page_and_img_on_api(),  # 从接口中获取图片地址和页面地址
         # baidu_spider.get_img_url_on_page(),
-        # baidu_spider.download_imgs()
     )  # 并发运行
 
 

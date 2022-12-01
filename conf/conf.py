@@ -20,6 +20,7 @@ socket.setdefaulttimeout(6)
 # workdir
 workdir = os.path.abspath('.')  # 工作目录
 
+#page和img的消费队列
 page_queue = queue.Queue()
 img_queue = queue.Queue()
 

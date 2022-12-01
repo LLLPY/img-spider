@@ -4,14 +4,13 @@
 import asyncio
 import requests
 import os
-import sys
-from urllib.request import urlretrieve
 from lxml import etree
 import re
 import time
 from selenium import webdriver
 import conf.conf as conf
 import conf.model as model
+from urllib.request import urlretrieve
 
 # 关闭警告
 requests.packages.urllib3.disable_warnings()
@@ -44,7 +43,7 @@ class BaseSpider:
 
     # urlretrieve
     @staticmethod
-    def urlretrieve_get(url, save_path, is_delete=False):
+    def urlretrieve_get(url, save_path, is_delete=True):
 
         urlretrieve(url, save_path)
         # 如果仅仅是临时文件，就将其删除
@@ -68,124 +67,6 @@ class BaseSpider:
         chrome_driver.close()
         return page
 
-    # 根据获取一个page上的img链接
-    async def get_img_url_on_page(self):
-
-        self.logger.warning(f'{self.__class__.__name__}开始抓取页面上的链接...')
-        while True:
-
-            # 让出cpu
-            await asyncio.sleep(0)
-            if not conf.page_ready_to_crawl_queue.empty():
-                self.logger.info(f'qsize:{conf.page_ready_to_crawl_queue.qsize()}')
-                page_obj = conf.page_ready_to_crawl_queue.get()
-                res, success = self.get(page_obj.url)
-                if not success:
-                    conf.page_crawled_set.add(page_obj.url)
-                    self.logger.warning(f'页面请求失败:{page_obj.url}')
-                else:
-                    html = res.text
-                    # 上一页和下一页的链接
-                    host = page_obj.url.split('/', 1)[0]
-                    relate_links = self.get_pre_and_next_links(html)
-                    if relate_links:
-                        for sub_url in relate_links:
-                            print(f'{host}/{sub_url}')
-                    self.logger.info(f'page:{page_obj.url}\n,relate_links:{relate_links}')
-                    e = etree.HTML(html)
-                    img_list = e.xpath('//body//img/@src')
-
-                    for img in img_list:
-                        img_obj = model.Img(self.keyword, page_obj.url, img)
-                        if img_obj not in conf.img_ready_set and img_obj not in conf.img_crawled_set:
-                            conf.img_ready_to_crawl_queue.put(img_obj)
-                    self.logger.info(
-                        f'图片抽取成功,keyword:{self.keyword},抽取到了{len(img_list)}张图片链接,页面地址:{page_obj.url}')
-                    conf.page_crawled_set.add(page_obj.url)  # 不管数据有没有抽取成功，都添加到已爬取的集合中
-            else:
-                # 结束
-                for _ in range(15):
-                    await asyncio.sleep(1)
-                    if not conf.page_ready_to_crawl_queue.empty():
-                        break
-                else:
-                    self.logger.warning(f'{self.__class__.__name__}图片抽取结束...')
-                    break
-
-    # 下载图片
-    @classmethod
-    async def download_img(cls, img_obj: model.Img):
-        # 创建下载目录
-        dirs = img_obj.save_path.rsplit(os.sep, 1)[0]
-        if not os.path.isdir(dirs):
-            os.makedirs(dirs)
-        success = True
-        msg = ''
-        try:
-            urlretrieve(img_obj.url, img_obj.save_path)
-        except Exception as e:
-            msg = e
-            success = False
-        ###############################################################################################################
-
-        # try:
-        #     async with aiohttp.ClientSession() as session:
-        #         aiohttp.ClientTimeout(5)  # 最大等待时间为5秒
-        #         async with session.get(img_obj.url, headers=conf.HEADERS) as res:
-        #             dirs = img_obj.save_path.rsplit(os.sep, 1)[0]
-        #             if not os.path.isdir(dirs):
-        #                 os.makedirs(dirs)
-        #             async with aiofiles.open(img_obj.save_path, 'wb') as f:
-        #                 content = await res.content.read()
-        #                 await f.write(content)
-        # except Exception as e:
-        # msg=e
-
-        return {'status': success, 'msg': msg, 'img_obj': img_obj}
-
-    @staticmethod
-    def download_img_callback(msg):
-        result = msg.result()
-        status = result['status']
-        success = ['失败', '成功'][status]
-        msg = result['msg']
-        img_obj = result['img_obj']
-        conf.img_ready_set.discard(img_obj)
-        conf.img_crawled_set.add(img_obj)
-        BaseSpider.logger.info(
-            f'下载{success},msg:{msg},剩余{conf.img_ready_to_crawl_queue.qsize()}待爬取...img_url:{img_obj.url}')
-
-    # 下载图片
-    async def download_imgs(self):
-        self.logger.warning(f'{self.__class__.__name__}开始下载图片...')
-        while True:
-            await asyncio.sleep(0)  # 让出cpu
-            task_list = []
-            for _ in range(5):  # 每次启动5个任务去下载图片
-                if not conf.img_ready_to_crawl_queue.empty():
-                    img_obj = conf.img_ready_to_crawl_queue.get()
-                    task = asyncio.create_task(self.download_img(img_obj))
-                    task_list.append(task)
-
-            # 等待当前批次的下载任务完成之后再进行下一批次的任务进行
-            for task in task_list:
-                task.add_done_callback(self.download_img_callback)
-                await task
-
-            # 结束下载
-            if conf.img_ready_to_crawl_queue.empty():
-                # 如果连续15秒内队列中都没有新的数据，就结束爬取
-                for _ in range(15):
-                    await asyncio.sleep(1)
-                    if not conf.img_ready_to_crawl_queue.empty():
-                        break
-                else:
-                    self.logger.warning(f'{self.__class__.__name__}图片下载结束...')
-                    break
-                # await asyncio.sleep(15)
-                # if conf.img_ready_to_crawl_queue.empty():
-                # self.logger.info('图片下载结束...')
-                # break
 
     # 获取某个页面中上一页和下一页的链接
     @staticmethod
@@ -304,8 +185,8 @@ class BaseSpider:
 
             conf.api_crawled_set.add(api_url)  # 将此api添加到已爬取的集合中
 
-    # 根据关键字获取图片所在页面的地址
-    async def get_page_and_img_by_keyword(self):
+    # 获取api上的页面和图片
+    async def get_page_and_img_on_api(self):
         spider_name = self.__class__.__name__
         keyword = self.keyword
         page_num = 1
@@ -353,6 +234,50 @@ class BaseSpider:
                 cls.logger.warning('图片上传服务已退出...')
                 break
 
+     # 获取页面上的page和img
+    async def get_page_and_img_on_page(self):
+
+        self.logger.warning(f'{self.__class__.__name__}开始抓取页面上的链接...')
+        while True:
+
+            # 让出cpu
+            await asyncio.sleep(0)
+            if not conf.page_queue.empty():
+                self.logger.info(f'qsize:{conf.page_queue.qsize()}')
+                page_obj = conf.page_queue.get()
+                res, success = self.get(page_obj.url)
+                if not success:
+                    conf.page_set.add(page_obj.url)
+                    self.logger.warning(f'页面请求失败:{page_obj.url}')
+                else:
+                    html = res.text
+                    # 上一页和下一页的链接
+                    host = page_obj.url.split('/', 1)[0]
+                    relate_links = self.get_pre_and_next_links(html)
+                    if relate_links:
+                        for sub_url in relate_links:
+                            print(f'{host}/{sub_url}')
+                    self.logger.info(f'page:{page_obj.url}\n,relate_links:{relate_links}')
+                    e = etree.HTML(html)
+                    img_list = e.xpath('//body//img/@src')
+
+                    for img in img_list:
+                        img_obj = model.Img(self.keyword, page_obj.url, img)
+                        #TODO 
+                    self.logger.info(
+                        f'图片抽取成功,keyword:{self.keyword},抽取到了{len(img_list)}张图片链接,页面地址:{page_obj.url}')
+                    conf.page_crawled_set.add(page_obj.url)  # 不管数据有没有抽取成功，都添加到已爬取的集合中
+            else:
+                # 结束
+                for _ in range(15):
+                    await asyncio.sleep(1)
+                    if not conf.page_queue.empty():
+                        break
+                else:
+                    self.logger.warning(f'{self.__class__.__name__}图片抽取结束...')
+                    break
+
+   
 
 # 定时工作
 async def timed_task():
@@ -367,4 +292,14 @@ def run_timed_task():
 
 
 if __name__ == '__main__':
+    
+    #keyword_spider要实现的功能:
+        #1.请求各个搜索引擎的api，获取keyword对应的img和page(输入)
+        #2.请求page，抽取上面的img和page(输入)
+        #功能1和功能2并发执行    
+    #img_spider要实现的功能:
+        #1.以图搜图，获取img的相似图片以及图片所在的page(输入)
+        #2.下载img(输出)
+        #功能1和功能2同步执行，功能1执行完成后再执行功能2(主要是为了防止爬取频率过高)
+    
     spider = BaseSpider('大海')
