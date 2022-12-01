@@ -37,7 +37,7 @@ class BingSpider(BaseSpider):
         text = response.text
         json_content = re.sub(r'&quot;', '"', text)
         res = re.findall('m="(\{.*?\})"', json_content)
-
+        print(333)
         for item in res:
             item = json.loads(item) or {}
             origin_img_url = item.get('murl', '')  # 原始图
@@ -50,8 +50,8 @@ class BingSpider(BaseSpider):
                 'page_url': page_url,
                 'desc': desc
             }
-
             data_list.append(item)
+        print(444)
         return data_list
 
 

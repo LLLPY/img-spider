@@ -1,9 +1,5 @@
 import requests
 import json
-import conf.conf as conf
-import time
-import asyncio
-
 
 class Client:
     HOST = 'http://127.0.0.1'
@@ -11,7 +7,6 @@ class Client:
     img_server_prefix = 'img_server'
     page_server_prefix = 'page_server'
     salt = ''
-
     HEADERS = {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/100.0.4896.60 Safari/537.36',
     }
@@ -49,46 +44,6 @@ class Client:
 
         return json_content
 
-    @classmethod
-    async def do_upload_img(cls):
-        conf.img_spider_logger.warning(f'图片上传服务已启动...')
-        now = time.time()
-        while True:
-            await asyncio.sleep(1)
-            end = time.time()
-            # 每10秒或者已爬取的图片集合数量大于50
-            if (end - now) > 10 or len(conf.img_crawled_set) > 50:
-                if len(conf.img_crawled_set) > 0:
-                    img_dict_list = []
-                    img_list = []
-                    for img_obj in conf.img_crawled_set:
-                        img_list.append(img_obj)
-                        img_dict_list.append(img_obj.to_dict())
-                    try:
-                        res = conf.img_client.upload_img(img_dict_list)
-                        if res.json()['status'] == 'success':
-                            # 抛弃已经上传的
-                            for img in img_list:
-                                conf.img_crawled_set.discard(img)
-                            conf.img_spider_logger.info(
-                                f'图片上传成功,上传了{len(img_dict_list)}张图片,len(img_crawled_set)={len(conf.img_crawled_set)}...')
-                        else:
-                            conf.img_spider_logger.info(f'图片上传失败...')
-                    except Exception as e:
-                        conf.img_spider_logger.info(f'图片上传失败...msg:{e}')
-
-                    # 重置时间
-                    now = time.time()
-
-            # 结束
-            for _ in range(20):
-                await asyncio.sleep(1)
-                if len(conf.img_crawled_set) > 0:
-                    break
-            else:
-                conf.img_spider_logger.warning('图片上传服务已退出...')
-                break
-
     # 上传page
     def upload_page(self, page_list):
         url = f'{self.HOST}:{self.PORT}/{self.page_server_prefix}/upload_page/'
@@ -105,22 +60,22 @@ class Client:
             'uid_list': json.dumps(uid_list),
         }
         json_content = self.post(url, data=data).json()
+        print(json_content)
+        return json_content
+
+    def get_ready_page(self, keyword=None):
+        url = f'{self.HOST}:{self.PORT}/{self.page_server_prefix}/get_ready_page/'
+        data = {
+            'keyword': keyword,
+        }
+        json_content = self.post(url, data=data).json()
+        print(json_content)
         return json_content
 
 
 if __name__ == '__main__':
     client = Client()
-    keyword_list = client.get_keyword_list()
-    img_list = [
-        {
-            'url': 'www.lll.plus',
-            'thumb_url': 'www.lll.plus',
-        },
-        {
-            'url': 'www.666.plus',
-            'thumb_url': 'www.666.plus',
-        },
-    ]
-
-    res = client.upload_img(img_list)
-    print(res.json())
+    uid_list = [1111, 22222, 3333]
+    res = client.get_ready_page()
+    for i in res['data']:
+        print(i)

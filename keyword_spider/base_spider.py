@@ -67,7 +67,6 @@ class BaseSpider:
         chrome_driver.close()
         return page
 
-
     # 获取某个页面中上一页和下一页的链接
     @staticmethod
     def get_pre_and_next_links(html):
@@ -129,11 +128,8 @@ class BaseSpider:
                 conf.api_crawled_set.add(api_url)  # 将失败的url添加到api_crawled_set集合中
                 continue
             # 3.数据抽取，从接口响应的数据中抽取出图片和页面的地址，不同的借口对应不同的抽取规则
-            print(111, api_url)
             data_list = extract_func(res)
-            print(22222)
-            # 4.去重 conf.img_set用于本地去重,用url的hash值来判断 #TODO 后期改用服务器去重 check_dup_uid
-            data_list = [img for img in data_list if model.Img.to_hash(img['origin_img_url']) not in conf.img_set]
+            # 4.去重 conf.img_set用于本地去重,用url的hash值来判断
             cls.logger.info(f'抓取了{len(data_list)}个items从{spider_name}-api:{api_url}')
 
             img_dict_list = []
@@ -160,12 +156,12 @@ class BaseSpider:
 
             # 5.上传页面到服务器
             res = cls.client.upload_page(page_dict_list)
-            if res['status'] != 'success':
+            if res['code'] != '200':
                 cls.logger.warning(f'页面上传失败...')
             else:
                 cls.logger.info(f'页面上传成功,上传了{len(page_dict_list)}个页面...')
             res = cls.client.upload_img(img_dict_list)
-            if res['status'] != 'success':
+            if res['code'] != '200':
                 cls.logger.warning(f'图片上传失败...')
             else:
                 cls.logger.info(f'图片上传成功,上传了{len(page_dict_list)}个图片...')
@@ -234,7 +230,7 @@ class BaseSpider:
                 cls.logger.warning('图片上传服务已退出...')
                 break
 
-     # 获取页面上的page和img
+    # 获取页面上的page和img
     async def get_page_and_img_on_page(self):
 
         self.logger.warning(f'{self.__class__.__name__}开始抓取页面上的链接...')
@@ -243,12 +239,11 @@ class BaseSpider:
             # 让出cpu
             await asyncio.sleep(0)
             if not conf.page_queue.empty():
-                self.logger.info(f'qsize:{conf.page_queue.qsize()}')
                 page_obj = conf.page_queue.get()
                 res, success = self.get(page_obj.url)
                 if not success:
                     conf.page_set.add(page_obj.url)
-                    self.logger.warning(f'页面请求失败:{page_obj.url}')
+                    self.logger.warning(f'页面请求失败...{page_obj.url}')
                 else:
                     html = res.text
                     # 上一页和下一页的链接
@@ -260,10 +255,9 @@ class BaseSpider:
                     self.logger.info(f'page:{page_obj.url}\n,relate_links:{relate_links}')
                     e = etree.HTML(html)
                     img_list = e.xpath('//body//img/@src')
-
+                    # TODO 获取页面上的page和img待完成
                     for img in img_list:
                         img_obj = model.Img(self.keyword, page_obj.url, img)
-                        #TODO 
                     self.logger.info(
                         f'图片抽取成功,keyword:{self.keyword},抽取到了{len(img_list)}张图片链接,页面地址:{page_obj.url}')
                     conf.page_crawled_set.add(page_obj.url)  # 不管数据有没有抽取成功，都添加到已爬取的集合中
@@ -277,11 +271,11 @@ class BaseSpider:
                     self.logger.warning(f'{self.__class__.__name__}图片抽取结束...')
                     break
 
-   
 
 # 定时工作
 async def timed_task():
     await asyncio.gather(
+
         BaseSpider.do_upload_img()  # 定时上传图片
     )
 
@@ -292,14 +286,13 @@ def run_timed_task():
 
 
 if __name__ == '__main__':
-    
-    #keyword_spider要实现的功能:
-        #1.请求各个搜索引擎的api，获取keyword对应的img和page(输入)
-        #2.请求page，抽取上面的img和page(输入)
-        #功能1和功能2并发执行    
-    #img_spider要实现的功能:
-        #1.以图搜图，获取img的相似图片以及图片所在的page(输入)
-        #2.下载img(输出)
-        #功能1和功能2同步执行，功能1执行完成后再执行功能2(主要是为了防止爬取频率过高)
-    
+    # keyword_spider要实现的功能:
+    # 1.请求各个搜索引擎的api，获取keyword对应的img和page(输入)
+    # 2.请求page，抽取上面的img和page(输入)
+    # 功能1和功能2并发执行
+    # img_spider要实现的功能:
+    # 1.以图搜图，获取img的相似图片以及图片所在的page(输入)
+    # 2.下载img(输出)
+    # 功能1和功能2同步执行，功能1执行完成后再执行功能2(主要是为了防止爬取频率过高)
+
     spider = BaseSpider('大海')
