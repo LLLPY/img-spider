@@ -62,7 +62,8 @@ class Client:
         json_content = self.post(url, data=data).json()
         print(json_content)
         return json_content
-
+    
+    #获取待爬取的page
     def get_ready_page(self, keyword=None):
         url = f'{self.HOST}:{self.PORT}/{self.page_server_prefix}/get_ready_page/'
         data = {
@@ -72,6 +73,16 @@ class Client:
         print(json_content)
         return json_content
 
+    #更新page的状态
+    def update_page(self,page_dict):
+        url = f'{self.HOST}:{self.PORT}/{self.page_server_prefix}/update_page/'
+        data = {
+            'page': json.dumps(page_dict),
+        }
+        json_content = self.post(url, data=data).json()
+        print(json_content)
+        return json_content
+    
 
 if __name__ == '__main__':
     client = Client()

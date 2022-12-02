@@ -69,18 +69,26 @@ class BaseSpider:
 
     # 获取某个页面中上一页和下一页的链接
     @staticmethod
-    def get_pre_and_next_links(html):
+    def get_pre_and_next_links(host,html):
         pattern = r'<a.*href="(.*?)".*>.*{}.*</a>'
         tag_list = ['上一页', 'pre', '下一页', 'next', 'page']
         res = []
         for tag in tag_list:
             tmp_res = re.findall(pattern.format(tag), html, re.IGNORECASE)
             res.extend(tmp_res)
+        res=[host+page.strip('/') if not page.startwith('http') else page for page in res]
         return list(set(res))
 
-    def get_page_links(html):
-        pattern = r'<a.*href="(.*?)".*<img.*</a>'
-        re.findall(pattern, html, re.IGNORECASE)
+    #获取page和img
+    def get_page_and_img_links(host,html):
+        pattern = r'<a.*href="(.*?)".*<img.*src="(.*?)".*</a>'
+        res=re.findall(pattern, html, re.IGNORECASE)
+        for i in range(len(res)):
+            page_img=res[i]
+            page=host+page_img[0].strip('/')
+            img=host+page_img[1].strip('/')
+            res[i]=(page,img)
+        return res
 
     # 抽取规则
     @classmethod
@@ -155,16 +163,16 @@ class BaseSpider:
                 page_dict_list.append(page_obj.to_dict())
 
             # 5.上传页面到服务器
-            res = cls.client.upload_page(page_dict_list)
-            if res['code'] != '200':
-                cls.logger.warning(f'页面上传失败...')
-            else:
-                cls.logger.info(f'页面上传成功,上传了{len(page_dict_list)}个页面...')
-            res = cls.client.upload_img(img_dict_list)
-            if res['code'] != '200':
-                cls.logger.warning(f'图片上传失败...')
-            else:
-                cls.logger.info(f'图片上传成功,上传了{len(page_dict_list)}个图片...')
+            # res = cls.client.upload_page(page_dict_list)
+            # if res['code'] != '200':
+            #     cls.logger.warning(f'页面上传失败...')
+            # else:
+            #     cls.logger.info(f'页面上传成功,上传了{len(page_dict_list)}个页面...')
+            # res = cls.client.upload_img(img_dict_list)
+            # if res['code'] != '200':
+            #     cls.logger.warning(f'图片上传失败...')
+            # else:
+            #     cls.logger.info(f'图片上传成功,上传了{len(page_dict_list)}个图片...')
 
             # 6.结束 最后一页
             if done_func(data_list, per_page_count):
@@ -244,32 +252,58 @@ class BaseSpider:
                 if not success:
                     conf.page_set.add(page_obj.url)
                     self.logger.warning(f'页面请求失败...{page_obj.url}')
-                else:
-                    html = res.text
-                    # 上一页和下一页的链接
-                    host = page_obj.url.split('/', 1)[0]
-                    relate_links = self.get_pre_and_next_links(html)
-                    if relate_links:
-                        for sub_url in relate_links:
-                            print(f'{host}/{sub_url}')
-                    self.logger.info(f'page:{page_obj.url}\n,relate_links:{relate_links}')
-                    e = etree.HTML(html)
-                    img_list = e.xpath('//body//img/@src')
-                    # TODO 获取页面上的page和img待完成
-                    for img in img_list:
-                        img_obj = model.Img(self.keyword, page_obj.url, img)
-                    self.logger.info(
-                        f'图片抽取成功,keyword:{self.keyword},抽取到了{len(img_list)}张图片链接,页面地址:{page_obj.url}')
-                    conf.page_crawled_set.add(page_obj.url)  # 不管数据有没有抽取成功，都添加到已爬取的集合中
-            else:
-                # 结束
-                for _ in range(15):
-                    await asyncio.sleep(1)
-                    if not conf.page_queue.empty():
-                        break
-                else:
-                    self.logger.warning(f'{self.__class__.__name__}图片抽取结束...')
+                    continue
+             
+                    
+                img_link_list=[]
+                page_link_list=[]
+                
+                html = res.text
+                host = page_obj.url.split('/', 1)[0]+'/'
+                # 上一页和下一页的链接
+                pre_next_links = self.get_pre_and_next_links(host,html)        
+                page_link_list.extend(pre_next_links)
+                img_list = etree.HTML(html).xpath('//body//img/@src') #可能是原图链接
+                img_link_list.extend(img_list)
+                img_list=[host+img.strip('/') if not img.startwith('http') else img for img in img_list]
+                page_img_list=self.get_page_and_img_links(host,html)
+                for page_img in page_img_list:
+                    page_link_list.append(page_img[0])
+                    img_link_list.append(page_img[1])
+                    
+                img_dict_list=[]
+                page_dict_list=[]
+                for img in img_link_list:
+                    new_img_obj=model.Img(page_obj.keyword,page_obj.url,img,img)
+                    img_dict_list.append(new_img_obj.to_dict())
+                    print('img:',img)
+
+                
+                for page in page_link_list:
+                    new_page_obj=model.Page(page_obj.keyword,page,deep=page_obj.deep+1)
+                    page_dict_list.append(new_page_obj.to_dict())
+                    print('page:',page)
+
+
+                page_obj.status=model.Page.STATUS_CRAWLED
+                page_obj.img_count=len(img_dict_list)
+                
+                #上传服务器
+                self.client.update_page(page_obj.to_dict())
+                self.client.upload_page(page_dict_list)
+                self.client.upload_img(img_dict_list)
+            
+                self.logger.info(f'图片抽取成功,keyword:{self.keyword},抽取到了{len(img_link_list)}张图片链接,{len(page_link_list)}个页面链接,其中上一页和下一页抽到{len(pre_next_links)}个页面...page:{page_obj.url}')
+                
+    
+            # 结束
+            for _ in range(15):
+                await asyncio.sleep(1)
+                if not conf.page_queue.empty():
                     break
+            else:
+                self.logger.warning(f'{self.__class__.__name__}图片抽取结束...')
+                break
 
 
 # 定时工作

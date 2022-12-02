@@ -7,7 +7,7 @@ import asyncio
 from .base_spider import BaseSpider
 import conf.conf as conf
 import conf.model as model
-
+import json
 
 # 关键字爬虫：根据关键字，爬取相关页面，产出imgurl
 class BaiduSpider(BaseSpider):
@@ -31,25 +31,47 @@ class BaiduSpider(BaseSpider):
 
     @classmethod
     def extract(cls, response):
-        json_content = response.json()  # TODO json可能解析失败待解决
-        res = json_content.get('data', [])
+        try:
+            json_content = response.json()
+            item_list = json_content.get('data', [])
+        except:
+            item_list=cls.extract_with_re(response.text)
+        
         data_list = []
-        for item in res:
+        for item in item_list:
+            origin_img_url = cls.parse_encrypt_url(item.get('objURL', ''))  # 原图地址
+            thumb_img_url = cls.parse_encrypt_url(item.get('objURL', ''))  # 缩略图地址
+            page_url = cls.parse_encrypt_url(item.get('fromURL', ''))  # 页面地址
+            desc = item.get('fromPageTitleEnc', '') #描述
             if item:
-                origin_img_url = cls.parse_encrypt_url(item.get('objURL', ''))  # 原图地址
-                thumb_img_url = cls.parse_encrypt_url(item.get('objURL', ''))  # 缩略图地址
-                page_url = cls.parse_encrypt_url(item.get('fromURL', ''))  #
-                desc = item.get('fromPageTitle', '')
                 item = {
                     'origin_img_url': origin_img_url,
                     'thumb_img_url': thumb_img_url,
                     'page_url': page_url,
                     'desc': desc
                 }
-
                 data_list.append(item)
         return data_list
 
+    
+    @staticmethod
+    def extract_with_re(html):
+        item_list=[]
+        # origin_img_list=re.findall(r'objURL":"(.*?)"',html)
+        thumb_img_list=re.findall(r'thumbURL":"(.*?)"',html)
+        page_list=re.findall(r'fromURL":"(.*?)"',html)
+        desc_list=re.findall(r'fromPageTitleEnc":"(.*?)"',html)
+        for item in zip(thumb_img_list,page_list,desc_list):
+            item = {
+                'objURL': item[0],
+                'fromURL': item[1],
+                'fromPageTitleEnc': item[2],
+            }
+            item_list.append(item)
+        return item_list
+            
+        
+    
     # 解析加密的url
     @staticmethod
     def parse_encrypt_url(
