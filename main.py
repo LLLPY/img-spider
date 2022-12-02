@@ -14,15 +14,15 @@ from img_spider import baidu_spider as img_baidu_spider
 
 # 程序启动接口
 def main():
-    print(f'=============================')
-    print(f'#  🕸️        🕷️             #')
-    print(f'#    🕸️Img Spider🕷️         #')
-    print(f'#           🕸️2022-11-06🕸️  #')
-    print(f'#      powered by python🕷️  #')
-    print(f'=============================')
-    keyword = input('请输入关键字：')
+    # print(f'=============================')
+    # print(f'#  🕸️        🕷️             #')
+    # print(f'#    🕸️Img Spider🕷️         #')
+    # print(f'#           🕸️2022-11-06🕸️  #')
+    # print(f'#      powered by python🕷️  #')
+    # print(f'=============================')
+    # keyword = input('请输入关键字：')
 
-    # keyword = '雪山'
+    keyword = '雪山'
     th_pool = ThreadPoolExecutor(10)
     # 每类爬虫单独启一个线程
     th_pool.submit(keyword_baidu_spider.run_baidu_spider, keyword)  # 百度爬虫

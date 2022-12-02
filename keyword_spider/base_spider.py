@@ -62,32 +62,41 @@ class BaseSpider:
         # chrome_options.add_argument('--headless') #无头浏览器
         chrome_driver = webdriver.Chrome(chrome_options=chrome_options, service=conf.CHROMEDRIVER_SERVICE)
         chrome_driver.get(url)
-        time.sleep(1)
+        time.sleep(3)
         page = chrome_driver.page_source
         chrome_driver.close()
-        return page
+        return page, True
 
     # 获取某个页面中上一页和下一页的链接
     @staticmethod
-    def get_pre_and_next_links(host,html):
-        pattern = r'<a.*href="(.*?)".*>.*{}.*</a>'
-        tag_list = ['上一页', 'pre', '下一页', 'next', 'page']
-        res = []
-        for tag in tag_list:
-            tmp_res = re.findall(pattern.format(tag), html, re.IGNORECASE)
-            res.extend(tmp_res)
-        res=[host+page.strip('/') if not page.startwith('http') else page for page in res]
-        return list(set(res))
+    def get_pre_and_next_links(host, html):
+        print(999999, html)
+        res1 = re.findall(r'<a.*?href="(.*?)".*>.*?下一页.*?</a>', str(html))
+        print(88888)
+        res2 = re.findall(r'<a.*?href="(.*?)".*>.*?page.*?</a>', html)
+        print(666)
+        res1.extend(res2)
+        page_list = []
+        for page in res1:
+            if not page.startswith('http'):
+                page = host + page.strip('/')
+                page_list.append(page)
+        return list(set(page_list))
 
-    #获取page和img
-    def get_page_and_img_links(host,html):
+    # 获取page和img
+    @staticmethod
+    def get_page_and_img_links(host, html):
         pattern = r'<a.*href="(.*?)".*<img.*src="(.*?)".*</a>'
-        res=re.findall(pattern, html, re.IGNORECASE)
+        res = re.findall(pattern, html, re.IGNORECASE)
         for i in range(len(res)):
-            page_img=res[i]
-            page=host+page_img[0].strip('/')
-            img=host+page_img[1].strip('/')
-            res[i]=(page,img)
+            page_img = res[i]
+            page = str(page_img[0])
+            img = str(page_img[1])
+            if not page.startswith('http'):
+                page = host + page.strip('/')
+            if not img.startswith('http'):
+                img = host + img.strip('/')
+            res[i] = (page, img)
         return res
 
     # 抽取规则
@@ -163,16 +172,16 @@ class BaseSpider:
                 page_dict_list.append(page_obj.to_dict())
 
             # 5.上传页面到服务器
-            # res = cls.client.upload_page(page_dict_list)
-            # if res['code'] != '200':
-            #     cls.logger.warning(f'页面上传失败...')
-            # else:
-            #     cls.logger.info(f'页面上传成功,上传了{len(page_dict_list)}个页面...')
-            # res = cls.client.upload_img(img_dict_list)
-            # if res['code'] != '200':
-            #     cls.logger.warning(f'图片上传失败...')
-            # else:
-            #     cls.logger.info(f'图片上传成功,上传了{len(page_dict_list)}个图片...')
+            res = cls.client.upload_page(page_dict_list)
+            if res['code'] != '200':
+                cls.logger.warning(f'页面上传失败...')
+            else:
+                cls.logger.info(f'页面上传成功,上传了{len(page_dict_list)}个页面...')
+            res = cls.client.upload_img(img_dict_list)
+            if res['code'] != '200':
+                cls.logger.warning(f'图片上传失败...')
+            else:
+                cls.logger.info(f'图片上传成功,上传了{len(page_dict_list)}个图片...')
 
             # 6.结束 最后一页
             if done_func(data_list, per_page_count):
@@ -239,77 +248,102 @@ class BaseSpider:
                 break
 
     # 获取页面上的page和img
-    async def get_page_and_img_on_page(self):
+    def get_page_and_img_on_page(self):
 
         self.logger.warning(f'{self.__class__.__name__}开始抓取页面上的链接...')
         while True:
-
-            # 让出cpu
-            await asyncio.sleep(0)
             if not conf.page_queue.empty():
                 page_obj = conf.page_queue.get()
-                res, success = self.get(page_obj.url)
+                html, success = self.chrome_get(page_obj.url)
                 if not success:
-                    conf.page_set.add(page_obj.url)
                     self.logger.warning(f'页面请求失败...{page_obj.url}')
                     continue
-             
-                    
-                img_link_list=[]
-                page_link_list=[]
-                
-                html = res.text
-                host = page_obj.url.split('/', 1)[0]+'/'
+
+                img_link_list = []
+                page_link_list = []
+
+                # html = res.text
+                host = page_obj.url.replace('//', '*').split('/', 1)[0].replace('*', '//') + '/'
                 # 上一页和下一页的链接
-                pre_next_links = self.get_pre_and_next_links(host,html)        
-                page_link_list.extend(pre_next_links)
-                img_list = etree.HTML(html).xpath('//body//img/@src') #可能是原图链接
+                # pre_next_links = self.get_pre_and_next_links(host, html)
+                # page_link_list.extend(pre_next_links)
+                img_list = etree.HTML(html).xpath('//body//img/@src')  # 可能是原图链接
                 img_link_list.extend(img_list)
-                img_list=[host+img.strip('/') if not img.startwith('http') else img for img in img_list]
-                page_img_list=self.get_page_and_img_links(host,html)
+                page_img_list = self.get_page_and_img_links(host, html)
                 for page_img in page_img_list:
                     page_link_list.append(page_img[0])
                     img_link_list.append(page_img[1])
-                    
-                img_dict_list=[]
-                page_dict_list=[]
+
+                img_dict_list = []
+                page_dict_list = []
                 for img in img_link_list:
-                    new_img_obj=model.Img(page_obj.keyword,page_obj.url,img,img)
+                    new_img_obj = model.Img(page_obj.keyword, page_obj.url, img, img)
                     img_dict_list.append(new_img_obj.to_dict())
-                    print('img:',img)
 
-                
                 for page in page_link_list:
-                    new_page_obj=model.Page(page_obj.keyword,page,deep=page_obj.deep+1)
+                    new_page_obj = model.Page(page_obj.keyword, page, deep=page_obj.deep + 1)
                     page_dict_list.append(new_page_obj.to_dict())
-                    print('page:',page)
 
+                page_obj.status = model.Page.STATUS_CRAWLED
+                page_obj.img_count = len(img_dict_list)
+                # 上传服务器
+                page_dict = page_obj.to_dict()
+                res = self.client.update_page(page_dict)
 
-                page_obj.status=model.Page.STATUS_CRAWLED
-                page_obj.img_count=len(img_dict_list)
-                
-                #上传服务器
-                self.client.update_page(page_obj.to_dict())
-                self.client.upload_page(page_dict_list)
-                self.client.upload_img(img_dict_list)
-            
-                self.logger.info(f'图片抽取成功,keyword:{self.keyword},抽取到了{len(img_link_list)}张图片链接,{len(page_link_list)}个页面链接,其中上一页和下一页抽到{len(pre_next_links)}个页面...page:{page_obj.url}')
-                
-    
+                if res['code'] != '200':
+                    self.logger.warning(f'page状态更新失败...,page:{page_obj.url}')
+
+                res = self.client.upload_page(page_dict_list)
+
+                if res['code'] != '200':
+                    self.logger.warning(f'页面上传失败...')
+                else:
+                    self.logger.info(f'页面上传成功,上传了{len(page_dict_list)}个page...')
+
+                res = self.client.upload_img(img_dict_list)
+
+                if res['code'] != '200':
+                    self.logger.warning(f'图片上传失败...')
+                else:
+                    self.logger.info(f'图片上传成功,上传了{len(img_dict_list)}个img...')
+
+                self.logger.info(
+                    f'图片抽取成功,keyword:{self.keyword},抽取到了{len(img_link_list)}张图片链接,{len(page_link_list)}个页面链接,其中上一页和下一页抽到{len(pre_next_links)}个页面...page:{page_obj.url}')
+
             # 结束
             for _ in range(15):
-                await asyncio.sleep(1)
+                time.sleep(1)
                 if not conf.page_queue.empty():
                     break
             else:
                 self.logger.warning(f'{self.__class__.__name__}图片抽取结束...')
                 break
 
+    # 补充page_queue
+    def supply_page_queue(self):
+
+        while True:
+            time.sleep(1)
+            if conf.page_queue.qsize() < 50:
+                res = self.client.get_ready_page(self.keyword)
+                if res['code'] == '200':
+                    page_list = res['data']
+                    while page_list:
+                        page_obj = model.Page('', '')
+                        page_dict = page_list.pop()
+                        for k in page_dict:
+                            if k == 'crawl_time':
+                                crawl_time = page_dict[k]
+                                page_obj.crawl_time = page_obj.str_to_datetime(crawl_time)
+                            else:
+                                setattr(page_obj, k, page_dict[k])
+                        conf.page_queue.put(page_obj)
+                self.logger.info(f'补充了page_queue,剩余待爬取:{conf.page_queue.qsize()}...')
+
 
 # 定时工作
 async def timed_task():
     await asyncio.gather(
-
         BaseSpider.do_upload_img()  # 定时上传图片
     )
 

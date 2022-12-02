@@ -59,6 +59,9 @@ class Page(Base):
         }
         return dict_con
 
+    def str_to_datetime(self, datetime_str):
+        return datetime.datetime.strptime(datetime_str, '%Y-%m-%d %H:%M:%S')
+
 
 # 图片
 class Img(Base):

@@ -9,6 +9,7 @@ import conf.conf as conf
 import conf.model as model
 import json
 
+
 # 关键字爬虫：根据关键字，爬取相关页面，产出imgurl
 class BaiduSpider(BaseSpider):
     API = 'https://image.baidu.com/search/acjson?tn=resultjson_com&ipn=rj&fp=result&word={}&cl=2&lm=-1&ie=utf-8&oe=utf-8&pn={}&rn={}'
@@ -35,14 +36,14 @@ class BaiduSpider(BaseSpider):
             json_content = response.json()
             item_list = json_content.get('data', [])
         except:
-            item_list=cls.extract_with_re(response.text)
-        
+            item_list = cls.extract_with_re(response.text)
+
         data_list = []
         for item in item_list:
             origin_img_url = cls.parse_encrypt_url(item.get('objURL', ''))  # 原图地址
             thumb_img_url = cls.parse_encrypt_url(item.get('objURL', ''))  # 缩略图地址
             page_url = cls.parse_encrypt_url(item.get('fromURL', ''))  # 页面地址
-            desc = item.get('fromPageTitleEnc', '') #描述
+            desc = item.get('fromPageTitleEnc', '')  # 描述
             if item:
                 item = {
                     'origin_img_url': origin_img_url,
@@ -53,15 +54,14 @@ class BaiduSpider(BaseSpider):
                 data_list.append(item)
         return data_list
 
-    
     @staticmethod
     def extract_with_re(html):
-        item_list=[]
+        item_list = []
         # origin_img_list=re.findall(r'objURL":"(.*?)"',html)
-        thumb_img_list=re.findall(r'thumbURL":"(.*?)"',html)
-        page_list=re.findall(r'fromURL":"(.*?)"',html)
-        desc_list=re.findall(r'fromPageTitleEnc":"(.*?)"',html)
-        for item in zip(thumb_img_list,page_list,desc_list):
+        thumb_img_list = re.findall(r'thumbURL":"(.*?)"', html)
+        page_list = re.findall(r'fromURL":"(.*?)"', html)
+        desc_list = re.findall(r'fromPageTitleEnc":"(.*?)"', html)
+        for item in zip(thumb_img_list, page_list, desc_list):
             item = {
                 'objURL': item[0],
                 'fromURL': item[1],
@@ -69,9 +69,7 @@ class BaiduSpider(BaseSpider):
             }
             item_list.append(item)
         return item_list
-            
-        
-    
+
     # 解析加密的url
     @staticmethod
     def parse_encrypt_url(
@@ -127,10 +125,16 @@ class BaiduSpider(BaseSpider):
 
 async def baidu_spider(keyword: str):
     baidu_spider = BaiduSpider(keyword)
-    await asyncio.gather(
-        baidu_spider.get_page_and_img_on_api(),  # 从接口中获取图片地址和页面地址
-        # baidu_spider.get_img_url_on_page(),
-    )  # 并发运行
+    # await asyncio.gather(
+    #     # baidu_spider.get_page_and_img_on_api(),  # 从接口中获取图片地址和页面地址
+    #     baidu_spider.supply_page_queue(),
+    #     baidu_spider.get_page_and_img_on_page(),
+    # )  # 并发运行
+    from concurrent.futures import ThreadPoolExecutor
+    th_pool = ThreadPoolExecutor()
+    th_pool.submit(baidu_spider.supply_page_queue)
+    th_pool.submit(baidu_spider.get_page_and_img_on_page)
+    th_pool.shutdown()
 
 
 # 执行
