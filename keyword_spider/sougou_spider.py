@@ -66,18 +66,4 @@ class SouGouSpider(BaseSpider):
         return data_list
 
 
-async def sougou_spider(keyword: str):
-    sougou_spider = SouGouSpider(keyword)
-    await asyncio.gather(
-        sougou_spider.get_page_and_img_on_api(),
-        # _360_spider.get_img_url_on_page(),
-    )  # 并发运行
 
-
-# 执行
-def run_sougou_spider(keyword: str):
-    asyncio.run(sougou_spider(keyword))
-
-
-if __name__ == '__main__':
-    run_sougou_spider('大海')

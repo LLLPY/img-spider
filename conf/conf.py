@@ -13,23 +13,12 @@ import log.logger as log
 import file_system.file_system as file_system
 import client.client as client
 
-
 # 设置timeout时间为6秒
 socket.setdefaulttimeout(6)
 
 # workdir
 workdir = os.path.abspath('.')  # 工作目录
 
-#page和img的消费队列
-page_queue = queue.Queue()
-img_queue = queue.Queue()
-
-# page_url和img_url的集合
-my_img_pickle = file_system.MyPickle(os.path.join(workdir, 'data', 'set', 'img_set'))
-my_page_pickle = file_system.MyPickle(os.path.join(workdir, 'data', 'set', 'page_set'))
-
-img_set = my_img_pickle.load()
-page_set = my_page_pickle.load()
 
 my_api_crawled_pickle = file_system.MyPickle(os.path.join(workdir, 'data', 'set', 'api_crawled_set'))
 api_crawled_set = my_api_crawled_pickle.load()

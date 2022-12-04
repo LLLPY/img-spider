@@ -2,11 +2,9 @@
 # @Author  ：LLL                         
 # @Date    ：2022/11/17 22:40  
 
-import asyncio
 from .base_spider import BaseSpider
 from typing import List
-import conf.model as model
-import conf.conf as conf
+
 
 
 # 关键字爬虫：根据关键字，爬取相关页面，产出imgurl
@@ -41,18 +39,7 @@ class _360Spider(BaseSpider):
         return data_list
 
 
-async def _360_spider(keyword: str):
-    _360_spider = _360Spider(keyword)
-    await asyncio.gather(
-        _360_spider.get_page_and_img_on_api(),
-        # _360_spider.get_img_url_on_page(),
-    )  # 并发运行
-
-
-# 执行
-def run_360_spider(keyword: str):
-    asyncio.run(_360_spider(keyword))
 
 
 if __name__ == '__main__':
-    run_360_spider('大海')
+    pass

@@ -1,13 +1,11 @@
 # -*- coding: UTF-8 -*-                            
 # @Author  ：LLL                         
 # @Date    ：2022/11/27 11:38
+import queue
 import time
-
 import conf.conf as conf
 import os
-from queue import Queue
 from selenium.webdriver import Chrome
-from selenium.webdriver.common.by import By
 from concurrent.futures import ThreadPoolExecutor
 import re
 import conf.model as model
@@ -92,6 +90,8 @@ class BaseSpider:
     def __init__(self, keyword):
         self.keyword = keyword
         self.chrome = Chrome(service=conf.CHROMEDRIVER_SERVICE, options=conf.chrome_options)
+        self.img_queue = queue.Queue()  # 图片消费队列
+        self.img_crawled_queue = queue.Queue()  # 下载完成的图片队列
 
     def __del__(self):
         try:
@@ -109,34 +109,63 @@ class BaseSpider:
         for page_thumb in page_thumb_list:
             page_url = page_thumb[0].strip('/')
             page_url = f'{host}/{page_url}'
-            page = model.Page(page_obj.keyword,page_url)
+            page = model.Page(page_obj.keyword, page_url)
             thumb_url = page_thumb[1]
             thumb_url_set.add(thumb_url)
-            img = model.Img(page_obj.keyword,page_url, thumb_url, thumb_url)
+            img = model.Img(page_obj.keyword, page_url, thumb_url, thumb_url)
 
         # 匹配原图
         img_list = re.findall(r'<img.*src="(.*?)".*>', page_html)
         for img in img_list:
             if img not in thumb_url_set:
                 img_obj = model.Img(page_obj.url, img, img)
-    
-    @staticmethod
-    def download_img_callback(msg):
+
+    def download_img_callback(self, msg):
         result = msg.result()
         status = result['status']
         success = ['失败', '成功'][status]
-        msg = result['msg']
-        img_obj = result['img_obj'] #TODO
-        BaseSpider.logger.info(
-            f'下载{success},msg:{msg},剩余{conf.img_queue.qsize()}待爬取...img_url:{img_obj.url}')
+        img_obj = result['img_obj']
 
-     # 下载图片
+        if success == '成功':
+            img_obj.status = model.Img.STATUS_CRAWLED
+        else:
+            img_obj.status = model.Img.STATUS_ERROR
+        msg = result['msg']
+        self.logger.info(
+            f'下载{success},msg:{msg},剩余{self.img_queue.qsize()}待爬取...img_url:{img_obj.url}')
+        self.img_crawled_queue.put(img_obj)
+
+    # 定时上传爬取完成的图片
+    def timed_upload_img(self):
+        self.logger.info(f'图片上传服务已启动...')
+        start = time.time()
+        while True:
+            if self.img_crawled_queue.qsize() > 20 or time.time() - start > 10:
+                img_dict_list = []
+                while not self.img_crawled_queue.empty():
+                    img_obj = self.img_crawled_queue.get()
+                    img_dict_list.append(img_obj.to_dict())
+                if img_dict_list:
+                    res = self.client.update_img(img_dict_list)
+                    if res['code'] == '200':
+                        self.logger.info(f'图片上传成功,上传了{len(img_dict_list)}个图片...')
+                    else:
+                        msg = res['msg']
+                        self.logger.warning(f'图片上传失败,msg:{msg}...')
+
+                start = time.time()
+            time.sleep(1)
+
+    # 下载图片
     @classmethod
     def download_img(cls, img_obj: model.Img):
         # 创建下载目录
         dirs = img_obj.save_path.rsplit(os.sep, 1)[0]
-        if not os.path.isdir(dirs):
-            os.makedirs(dirs)
+        try:
+            if not os.path.isdir(dirs):
+                os.makedirs(dirs)
+        except:
+            pass
         success = True
         msg = ''
         try:
@@ -144,45 +173,51 @@ class BaseSpider:
         except Exception as e:
             msg = e
             success = False
-        ###############################################################################################################
-
-        # try:
-        #     async with aiohttp.ClientSession() as session:
-        #         aiohttp.ClientTimeout(5)  # 最大等待时间为5秒
-        #         async with session.get(img_obj.url, headers=conf.HEADERS) as res:
-        #             dirs = img_obj.save_path.rsplit(os.sep, 1)[0]
-        #             if not os.path.isdir(dirs):
-        #                 os.makedirs(dirs)
-        #             async with aiofiles.open(img_obj.save_path, 'wb') as f:
-        #                 content = await res.content.read()
-        #                 await f.write(content)
-        # except Exception as e:
-        # msg=e
-
         return {'status': success, 'msg': msg, 'img_obj': img_obj}
 
+    def supply_img_queue(self):
+        res = self.client.get_ready_img_list(self.keyword)
+        if res['code'] == '200':
+            img_dict_list = res['data']
+            for img_dict in img_dict_list:
+                img_obj = model.Img.to_obj(img_dict)
+                self.img_queue.put(img_obj)
+            self.logger.info(f'补充了张{len(img_dict_list)}图片到消费队列...')
 
-      # 下载图片
+    # 下载图片
     def download_imgs(self):
         self.logger.warning(f'{self.__class__.__name__}开始下载图片...')
-        th_pool=ThreadPoolExecutor(5)
+        self.supply_img_queue()
         while True:
+            th_pool = ThreadPoolExecutor(5)
             for _ in range(5):  # 每次启动5个任务去下载图片
-                if not conf.img_queue.empty():
-                    img_obj = conf.img_queue.get()
-                    th_pool.submit(self.do_upload_img,img_obj)
-
+                if not self.img_queue.empty():
+                    img_obj = self.img_queue.get()
+                    future = th_pool.submit(self.download_img, img_obj)
+                    future.add_done_callback(self.download_img_callback)
             # 等待当前批次的下载任务完成之后再进行下一批次的任务进行
             th_pool.shutdown()
 
             # 结束下载
-            if conf.img_queue.empty():
+            if self.img_queue.empty():
+                self.supply_img_queue()
                 # 如果连续15秒内队列中都没有新的数据，就结束爬取
                 for _ in range(15):
                     time.sleep(1)
-                    if not conf.img_queue.empty():
+                    if not self.img_queue.empty():
                         break
                 else:
                     self.logger.warning(f'{self.__class__.__name__}图片下载结束...')
                     break
-            
+
+    def get_img_link_by_img(self):
+        pass
+
+    @classmethod
+    def run(cls, keyword):
+        spider = cls(keyword)
+        th_pool = ThreadPoolExecutor(5)
+        # th_pool.submit(spider.get_img_link_by_img)
+        th_pool.submit(spider.download_imgs)
+        th_pool.submit(spider.timed_upload_img)
+        th_pool.shutdown()

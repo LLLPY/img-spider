@@ -4,9 +4,10 @@ import json
 
 class Client:
     HOST = 'http://127.0.0.1'
-    PORT = '8000'
-    img_server_prefix = 'img_server'
-    page_server_prefix = 'page_server'
+    # HOST = 'http://www.lll.plus'
+    PORT = '80'
+    img_server_prefix = 'img-spider-server/img_server'
+    page_server_prefix = 'img-spider-server/page_server'
     salt = ''
     HEADERS = {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/100.0.4896.60 Safari/537.36',
@@ -61,12 +62,20 @@ class Client:
             'uid_list': json.dumps(uid_list),
         }
         json_content = self.post(url, data=data).json()
-        print(json_content)
         return json_content
 
     # 获取待爬取的page
     def get_ready_page(self, keyword=None):
         url = f'{self.HOST}:{self.PORT}/{self.page_server_prefix}/get_ready_page/'
+        data = {
+            'keyword': keyword,
+        }
+        json_content = self.post(url, data=data).json()
+        return json_content
+
+    # 获取待爬取的图片
+    def get_ready_img_list(self, keyword=None):
+        url = f'{self.HOST}:{self.PORT}/{self.img_server_prefix}/get_ready_img_list/'
         data = {
             'keyword': keyword,
         }
@@ -82,10 +91,26 @@ class Client:
         json_content = self.post(url, data=data).json()
         return json_content
 
+    # 更新img的状态
+    def update_img(self, img_dict_list):
+        url = f'{self.HOST}:{self.PORT}/{self.img_server_prefix}/update_img/'
+        data = {
+            'img_list': json.dumps(img_dict_list),
+        }
+        json_content = self.post(url, data=data).json()
+        return json_content
+
+    # 用于图片识别
+    def get_uncrawl_img_by_keyword(self, keyword):
+        url = f'{self.HOST}:{self.PORT}/{self.img_server_prefix}/get_uncrawl_img_by_keyword/'
+        data = {
+            'keyword': keyword,
+        }
+        json_content = self.post(url, data=data).json()
+        return json_content
+
 
 if __name__ == '__main__':
     client = Client()
-    uid_list = [1111, 22222, 3333]
-    res = client.get_ready_page()
-    for i in res['data']:
-        print(i)
+    res = client.get_ready_img_list('美女')
+    print(res)

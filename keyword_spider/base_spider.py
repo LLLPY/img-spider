@@ -1,16 +1,16 @@
 # -*- coding: UTF-8 -*-                            
 # @Author  ：LLL                         
 # @Date    ：2022/11/7 22:01  
-import asyncio
+from concurrent.futures.thread import ThreadPoolExecutor
 import requests
 import os
 from lxml import etree
 import re
 import time
-from selenium import webdriver
 import conf.conf as conf
 import conf.model as model
 from urllib.request import urlretrieve
+from selenium.webdriver import Chrome
 
 # 关闭警告
 requests.packages.urllib3.disable_warnings()
@@ -27,6 +27,8 @@ class BaseSpider:
 
     def __init__(self, keyword: str) -> None:
         self.keyword = keyword
+        self.chrome = Chrome(service=conf.CHROMEDRIVER_SERVICE, options=conf.chrome_options)
+        self.chrome.set_page_load_timeout(5)
 
     # get请求
     @classmethod
@@ -55,26 +57,11 @@ class BaseSpider:
             os.remove(save_path)
         return save_path, content
 
-    # chrome get
-    @staticmethod
-    def chrome_get(url):
-        chrome_options = webdriver.ChromeOptions()
-        # chrome_options.add_argument('--headless') #无头浏览器
-        chrome_driver = webdriver.Chrome(chrome_options=chrome_options, service=conf.CHROMEDRIVER_SERVICE)
-        chrome_driver.get(url)
-        time.sleep(3)
-        page = chrome_driver.page_source
-        chrome_driver.close()
-        return page, True
-
     # 获取某个页面中上一页和下一页的链接
     @staticmethod
     def get_pre_and_next_links(host, html):
-        print(999999, html)
         res1 = re.findall(r'<a.*?href="(.*?)".*>.*?下一页.*?</a>', str(html))
-        print(88888)
         res2 = re.findall(r'<a.*?href="(.*?)".*>.*?page.*?</a>', html)
-        print(666)
         res1.extend(res2)
         page_list = []
         for page in res1:
@@ -112,7 +99,7 @@ class BaseSpider:
 
     # 公共处理爬虫
     @classmethod
-    async def common_spider(cls, spider_name, keyword, page_num, per_page_count, API_url, extract_func, done_func):
+    def common_spider(cls, spider_name, keyword, page_num, per_page_count, API_url, extract_func, done_func):
         cls.logger.warning(f'爬虫{spider_name}已启动...')
 
         thumb_img_url_set = set()
@@ -132,7 +119,7 @@ class BaseSpider:
             tmp_page_url_set = set()
 
             # 让出cpu，给其他协程提供抢占的机会
-            await asyncio.sleep(0)
+            # await asyncio.sleep(0)
 
             api_url = API_url.format(keyword, page_num, per_page_count)
             # 1.判断该接口是否已经爬取过，如果是已经爬取的url，就不用再爬取了
@@ -199,53 +186,13 @@ class BaseSpider:
             conf.api_crawled_set.add(api_url)  # 将此api添加到已爬取的集合中
 
     # 获取api上的页面和图片
-    async def get_page_and_img_on_api(self):
+    def get_page_and_img_on_api(self):
         spider_name = self.__class__.__name__
         keyword = self.keyword
         page_num = 1
         per_page_count = 50
         API_url = self.API
-        await self.common_spider(spider_name, keyword, page_num, per_page_count, API_url, self.extract, self.done)
-
-    @classmethod
-    async def do_upload_img(cls):
-        cls.logger.warning(f'图片上传服务已启动...')
-        now = time.time()
-        while True:
-            await asyncio.sleep(1)
-            end = time.time()
-            # 每10秒或者已爬取的图片集合数量大于50
-            if (end - now) > 10 or len(conf.img_crawled_set) > 50:
-                if len(conf.img_crawled_set) > 0:
-                    img_dict_list = []
-                    img_list = []
-                    for img_obj in conf.img_crawled_set:
-                        img_list.append(img_obj)
-                        img_dict_list.append(img_obj.to_dict())
-                    try:
-                        res = conf.img_client.upload_img(img_dict_list)
-                        if res.json()['status'] == 'success':
-                            # 抛弃已经上传的
-                            for img in img_list:
-                                conf.img_crawled_set.discard(img)
-                            cls.logger.info(
-                                f'图片上传成功,上传了{len(img_dict_list)}张图片,len(img_crawled_set)={len(conf.img_crawled_set)}...')
-                        else:
-                            cls.logger.info(f'图片上传失败...')
-                    except Exception as e:
-                        cls.logger.info(f'图片上传失败...msg:{e}')
-
-                    # 重置时间
-                    now = time.time()
-
-            # 结束
-            for _ in range(20):
-                await asyncio.sleep(1)
-                if len(conf.img_crawled_set) > 0:
-                    break
-            else:
-                cls.logger.warning('图片上传服务已退出...')
-                break
+        self.common_spider(spider_name, keyword, page_num, per_page_count, API_url, self.extract, self.done)
 
     # 获取页面上的page和img
     def get_page_and_img_on_page(self):
@@ -254,11 +201,15 @@ class BaseSpider:
         while True:
             if not conf.page_queue.empty():
                 page_obj = conf.page_queue.get()
-                html, success = self.chrome_get(page_obj.url)
-                if not success:
-                    self.logger.warning(f'页面请求失败...{page_obj.url}')
-                    continue
+                try:
+                    self.chrome.get(page_obj.url)
+                    time.sleep(3)
+                    page_obj.status = model.Page.STATUS_CRAWLED
 
+                except Exception as e:
+                    self.logger.warning(f'页面加载失败...msg:{e}')
+                    page_obj.status = model.Page.STATUS_ERROR
+                html = self.chrome.page_source
                 img_link_list = []
                 page_link_list = []
 
@@ -268,6 +219,8 @@ class BaseSpider:
                 # pre_next_links = self.get_pre_and_next_links(host, html)
                 # page_link_list.extend(pre_next_links)
                 img_list = etree.HTML(html).xpath('//body//img/@src')  # 可能是原图链接
+                img_list = [host + img.strip('/') if not img.startswith('http') else img for img in img_list]
+
                 img_link_list.extend(img_list)
                 page_img_list = self.get_page_and_img_links(host, html)
                 for page_img in page_img_list:
@@ -284,7 +237,6 @@ class BaseSpider:
                     new_page_obj = model.Page(page_obj.keyword, page, deep=page_obj.deep + 1)
                     page_dict_list.append(new_page_obj.to_dict())
 
-                page_obj.status = model.Page.STATUS_CRAWLED
                 page_obj.img_count = len(img_dict_list)
                 # 上传服务器
                 page_dict = page_obj.to_dict()
@@ -308,16 +260,16 @@ class BaseSpider:
                     self.logger.info(f'图片上传成功,上传了{len(img_dict_list)}个img...')
 
                 self.logger.info(
-                    f'图片抽取成功,keyword:{self.keyword},抽取到了{len(img_link_list)}张图片链接,{len(page_link_list)}个页面链接,其中上一页和下一页抽到{len(pre_next_links)}个页面...page:{page_obj.url}')
+                    f'图片抽取成功,keyword:{self.keyword},抽取到了{len(img_link_list)}张图片链接,{len(page_link_list)}个页面链接...page:{page_obj.url}')
 
             # 结束
-            for _ in range(15):
-                time.sleep(1)
-                if not conf.page_queue.empty():
-                    break
-            else:
-                self.logger.warning(f'{self.__class__.__name__}图片抽取结束...')
-                break
+            # for _ in range(15):
+            #     time.sleep(1)
+            #     if not conf.page_queue.empty():
+            #         break
+            # else:
+            #     self.logger.warning(f'{self.__class__.__name__}图片抽取结束...')
+            #     break
 
     # 补充page_queue
     def supply_page_queue(self):
@@ -340,17 +292,21 @@ class BaseSpider:
                         conf.page_queue.put(page_obj)
                 self.logger.info(f'补充了page_queue,剩余待爬取:{conf.page_queue.qsize()}...')
 
+    def __del__(self):
+        try:
+            self.chrome.close()
+        except Exception as e:
+            conf.img_spider_logger.error(f'浏览器窗口关闭失败...错误原因:{e}')
 
-# 定时工作
-async def timed_task():
-    await asyncio.gather(
-        BaseSpider.do_upload_img()  # 定时上传图片
-    )
-
-
-# 启动定时任务
-def run_timed_task():
-    asyncio.run(timed_task())
+    # 启动
+    @classmethod
+    def run(cls, keyword):
+        spider = cls(keyword)
+        th_pool = ThreadPoolExecutor()
+        th_pool.submit(spider.get_page_and_img_on_api)  # 从接口中获取图片地址和页面地址
+        th_pool.submit(spider.supply_page_queue)
+        th_pool.submit(spider.get_page_and_img_on_page)
+        th_pool.shutdown()
 
 
 if __name__ == '__main__':

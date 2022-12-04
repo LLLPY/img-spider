@@ -49,19 +49,3 @@ class ChinaSoSpider(BaseSpider):
             data_list.append(item)
         return data_list
 
-
-async def chinaso_spider(keyword: str):
-    chinaso_spider = ChinaSoSpider(keyword)
-    await asyncio.gather(
-        chinaso_spider.get_page_and_img_on_api(),
-        # chinaso_spider.get_img_url_on_page(),
-    )  # 并发运行
-
-
-# 执行
-def run_chinaso_spider(keyword: str):
-    asyncio.run(chinaso_spider(keyword))
-
-
-if __name__ == '__main__':
-    run_chinaso_spider('大海')

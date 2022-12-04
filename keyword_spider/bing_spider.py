@@ -37,7 +37,6 @@ class BingSpider(BaseSpider):
         text = response.text
         json_content = re.sub(r'&quot;', '"', text)
         res = re.findall('m="(\{.*?\})"', json_content)
-        print(333)
         for item in res:
             item = json.loads(item) or {}
             origin_img_url = item.get('murl', '')  # 原始图
@@ -51,22 +50,7 @@ class BingSpider(BaseSpider):
                 'desc': desc
             }
             data_list.append(item)
-        print(444)
         return data_list
 
 
-async def bing_spider(keyword: str):
-    bing_spider = BingSpider(keyword)
-    await asyncio.gather(
-        bing_spider.get_page_and_img_on_api(),
-        # _360_spider.get_img_url_on_page(),
-    )  # 并发运行
 
-
-# 执行
-def run_bing_spider(keyword: str):
-    asyncio.run(bing_spider(keyword))
-
-
-if __name__ == '__main__':
-    run_bing_spider('大海')

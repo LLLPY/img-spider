@@ -3,11 +3,7 @@
 # @Date    ：2022/11/7 21:24
 
 import re
-import asyncio
 from .base_spider import BaseSpider
-import conf.conf as conf
-import conf.model as model
-import json
 
 
 # 关键字爬虫：根据关键字，爬取相关页面，产出imgurl
@@ -123,23 +119,6 @@ class BaiduSpider(BaseSpider):
         return ''.join(url_list)
 
 
-async def baidu_spider(keyword: str):
-    baidu_spider = BaiduSpider(keyword)
-    # await asyncio.gather(
-    #     # baidu_spider.get_page_and_img_on_api(),  # 从接口中获取图片地址和页面地址
-    #     baidu_spider.supply_page_queue(),
-    #     baidu_spider.get_page_and_img_on_page(),
-    # )  # 并发运行
-    from concurrent.futures import ThreadPoolExecutor
-    th_pool = ThreadPoolExecutor()
-    th_pool.submit(baidu_spider.supply_page_queue)
-    th_pool.submit(baidu_spider.get_page_and_img_on_page)
-    th_pool.shutdown()
-
-
-# 执行
-def run_baidu_spider(keyword: str):
-    asyncio.run(baidu_spider(keyword))
 
 
 if __name__ == '__main__':
