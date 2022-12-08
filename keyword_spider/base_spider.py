@@ -3,13 +3,11 @@
 # @Date    ：2022/11/7 22:01  
 from concurrent.futures.thread import ThreadPoolExecutor
 import requests
-import os
 from lxml import etree
 import re
 import time
 import conf.conf as conf
 import model.models as model
-from urllib.request import urlretrieve
 from selenium.webdriver import Chrome
 
 # 关闭警告
@@ -43,24 +41,11 @@ class BaseSpider:
             success = False
         return res, success
 
-    # urlretrieve
-    @staticmethod
-    def urlretrieve_get(url, save_path, is_delete=True):
-
-        urlretrieve(url, save_path)
-        # 如果仅仅是临时文件，就将其删除
-
-        with open(save_path, 'r', encoding='utf8') as f:
-            content = f.read()
-
-        if is_delete:
-            os.remove(save_path)
-        return save_path, content
-
+ 
     # 获取某个页面中上一页和下一页的链接
     @staticmethod
-    def get_pre_and_next_links(host, html):
-        res1 = re.findall(r'<a.*?href="(.*?)".*>.*?下一页.*?</a>', str(html))
+    def get_pre_and_next_links(host:str, html:str):
+        res1 = re.findall(r'<a.*?href="(.*?)".*>.*?下一页.*?</a>', html)
         res2 = re.findall(r'<a.*?href="(.*?)".*>.*?page.*?</a>', html)
         res1.extend(res2)
         page_list = []
@@ -296,7 +281,7 @@ class BaseSpider:
         try:
             self.chrome.close()
         except Exception as e:
-            conf.img_spider_logger.error(f'浏览器窗口关闭失败...错误原因:{e}')
+            self.logger.error(f'浏览器窗口关闭失败...错误原因:{e}')
 
     # 启动
     @classmethod

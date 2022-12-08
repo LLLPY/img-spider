@@ -1,10 +1,11 @@
-import requests
 import json
+import aiohttp
+import asyncio
 
 
 class Client:
     HOST = 'http://127.0.0.1'
-    # HOST = 'http://www.lll.plus'
+    HOST = 'http://www.lll.plus'
     PORT = '80'
     img_server_prefix = 'img-spider-server/img_server'
     page_server_prefix = 'img-spider-server/page_server'
@@ -14,103 +15,105 @@ class Client:
     }
 
     @classmethod
-    def get(cls, url):
-        return requests.get(url, headers=cls.HEADERS, verify=False, timeout=(5, 10))
+    async def async_get(cls, url: str):
+        timeout = aiohttp.ClientTimeout(total=10)  # 10秒过期
+        async with aiohttp.ClientSession(timeout=timeout) as session:
+            async with session.get(url, headers=cls.HEADERS) as response:
+                json_content = await response.json(content_type='application/json', encoding='utf-8')
+                return json_content
 
     @classmethod
-    def post(cls, url, data):
-        return requests.post(url, headers=cls.HEADERS, data=data, verify=False, timeout=(5, 10))
+    async def async_post(cls, url: str, data: any):
+        timeout = aiohttp.ClientTimeout(total=10)  # 10秒过期
+        async with aiohttp.ClientSession(timeout=timeout) as session:
+            async with session.post(url, headers=cls.HEADERS, data=data) as response:
+                json_content = await response.json(content_type='application/json', encoding='utf-8')
+                return json_content
 
     # 获取关键字列表
-    def get_keyword_list(self):
+    async def get_keyword_list(self):
         url = f'{self.HOST}:{self.PORT}/{self.page_server_prefix}/keyword_list'
-        json_content = self.get(url).json()
+        json_content = await self.async_get(url)
         keyword_list = json_content['keyword_list']
         return keyword_list
 
-    # 检测img是否已被爬取
-    def is_img_crawled(self, img):
-        pass
-
-    # 检测page是否被爬取
-    def is_page_crawled(self, page):
-        pass
-
     # 上传img
-    def upload_img(self, img_list):
+    async def upload_img(self, img_list):
         url = f'{self.HOST}:{self.PORT}/{self.img_server_prefix}/upload_img/'
         data = {
             'img_list': json.dumps(img_list),
         }
-        json_content = self.post(url, data=data).json()
+        json_content = await self.async_post(url, data=data)
 
         return json_content
 
     # 上传page
-    def upload_page(self, page_list):
+    async def upload_page(self, page_list):
         url = f'{self.HOST}:{self.PORT}/{self.page_server_prefix}/upload_page/'
         data = {
             'page_list': json.dumps(page_list),
         }
-        json_content = self.post(url, data=data).json()
+        json_content = await self.async_post(url, data=data)
         return json_content
 
     # 检测重复的uid
-    def check_dup_uid(self, uid_list):
+    async def check_dup_uid(self, uid_list):
         url = f'{self.HOST}:{self.PORT}/{self.img_server_prefix}/check_dup_uid/'
         data = {
             'uid_list': json.dumps(uid_list),
         }
-        json_content = self.post(url, data=data).json()
+        json_content = await self.async_post(url, data=data)
         return json_content
 
     # 获取待爬取的page
-    def get_ready_page(self, keyword=None):
+    async def get_ready_page(self, keyword=None):
         url = f'{self.HOST}:{self.PORT}/{self.page_server_prefix}/get_ready_page/'
         data = {
             'keyword': keyword,
         }
-        json_content = self.post(url, data=data).json()
+        json_content = await self.async_post(url, data=data)
         return json_content
 
     # 获取待爬取的图片
-    def get_ready_img_list(self, keyword=None):
+    async def get_ready_img_list(self, keyword=None):
         url = f'{self.HOST}:{self.PORT}/{self.img_server_prefix}/get_ready_img_list/'
         data = {
             'keyword': keyword,
         }
-        json_content = self.post(url, data=data).json()
+        json_content = self.async_post(url, data=data)
         return json_content
 
     # 更新page的状态
-    def update_page(self, page_dict):
+    async def update_page(self, page_dict):
         url = f'{self.HOST}:{self.PORT}/{self.page_server_prefix}/update_page/'
         data = {
             'page': json.dumps(page_dict),
         }
-        json_content = self.post(url, data=data).json()
+        json_content = await self.async_post(url, data=data)
         return json_content
 
     # 更新img的状态
-    def update_img(self, img_dict_list):
+    async def update_img(self, img_dict_list):
         url = f'{self.HOST}:{self.PORT}/{self.img_server_prefix}/update_img/'
         data = {
             'img_list': json.dumps(img_dict_list),
         }
-        json_content = self.post(url, data=data).json()
+        json_content = await self.async_post(url, data=data)
         return json_content
 
     # 用于图片识别
-    def get_uncrawl_img_by_keyword(self, keyword):
+    async def get_uncrawl_img_by_keyword(self, keyword):
         url = f'{self.HOST}:{self.PORT}/{self.img_server_prefix}/get_uncrawl_img_by_keyword/'
         data = {
             'keyword': keyword,
         }
-        json_content = self.post(url, data=data).json()
+        json_content = await self.async_post(url, data=data)
         return json_content
+
+
 
 
 if __name__ == '__main__':
     client = Client()
-    res = client.get_ready_img_list('美女')
+    res=asyncio.run(client.get_ready_page('大海'))
     print(res)
