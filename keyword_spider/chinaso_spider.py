@@ -3,8 +3,10 @@
 # @Date    ：2022/11/19 21:08  
 
 import asyncio
+import json
+
 from .base_spider import BaseSpider
-import conf.model as model
+import model.models as model
 import conf.conf as conf
 
 
@@ -29,10 +31,10 @@ class ChinaSoSpider(BaseSpider):
         super().__init__(keyword)
 
     @classmethod
-    def extract(cls, response):
+    def extract(cls, html):
         data_list = []
         # 数据抽取
-        json_content = response.json()
+        json_content = json.loads(html)
         res = json_content['data'].get('arrRes', [])
         for item in res:
             origin_img_url = item.get('url', '')

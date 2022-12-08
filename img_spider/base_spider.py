@@ -8,7 +8,7 @@ import os
 from selenium.webdriver import Chrome
 from concurrent.futures import ThreadPoolExecutor
 import re
-import conf.model as model
+import model.models as model
 from urllib.request import urlretrieve
 
 

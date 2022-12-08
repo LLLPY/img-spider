@@ -3,8 +3,10 @@
 # @Date    ：2022/11/17 22:40
 
 import asyncio
+import json
+
 from .base_spider import BaseSpider
-import conf.model as model
+import model.models as model
 import conf.conf as conf
 
 
@@ -29,10 +31,10 @@ class SouGouSpider(BaseSpider):
         super().__init__(keyword)
 
     @classmethod
-    def extract(cls, response):
+    def extract(cls, html):
         # 数据抽取
-        json_content = response.json()
-        data = json_content.get('data',{}) or {}
+        json_content = json.loads(html)
+        data = json_content.get('data', {}) or {}
         data_list = []
         # groupPic_json
         for item in data.get('groupPic_json', []):
@@ -64,6 +66,3 @@ class SouGouSpider(BaseSpider):
             data_list.append(item)
 
         return data_list
-
-
-

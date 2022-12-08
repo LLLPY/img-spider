@@ -1,6 +1,7 @@
 # -*- coding: UTF-8 -*-                            
 # @Author  ：LLL                         
-# @Date    ：2022/11/17 22:40  
+# @Date    ：2022/11/17 22:40
+import json
 
 from .base_spider import BaseSpider
 from typing import List
@@ -18,8 +19,8 @@ class _360Spider(BaseSpider):
 
     # 3.抽取规则，从接口响应的数据中抽取出图片和页面的地址
     @classmethod
-    def extract(cls, response) -> List[dict]:
-        json_content = response.json()
+    def extract(cls, html) -> List[dict]:
+        json_content = json.loads(html)
         res = json_content['list']
         data_list = []
         for item in res:

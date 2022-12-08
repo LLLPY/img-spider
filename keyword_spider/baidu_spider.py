@@ -1,7 +1,7 @@
 # -*- coding: UTF-8 -*-
 # @Author  ：LLL
 # @Date    ：2022/11/7 21:24
-
+import json
 import re
 from .base_spider import BaseSpider
 
@@ -64,14 +64,14 @@ class BaiduSpider(BaseSpider):
         super().__init__(keyword)
 
     @classmethod
-    def extract(cls, response):
+    def extract(cls, html):
         
         #josn解析失败了就用正则来解析
         try:
-            json_content = response.json()
+            json_content = json.loads(html)
             item_list = json_content.get('data', [])
         except:
-            item_list = cls.extract_with_re(response.text)
+            item_list = cls.extract_with_re(html)
 
         data_list = []
         for item in item_list:

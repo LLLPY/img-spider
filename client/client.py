@@ -5,7 +5,7 @@ import asyncio
 
 class Client:
     HOST = 'http://127.0.0.1'
-    HOST = 'http://www.lll.plus'
+    # HOST = 'http://www.lll.plus'
     PORT = '80'
     img_server_prefix = 'img-spider-server/img_server'
     page_server_prefix = 'img-spider-server/page_server'
@@ -53,6 +53,7 @@ class Client:
         data = {
             'page_list': json.dumps(page_list),
         }
+
         json_content = await self.async_post(url, data=data)
         return json_content
 

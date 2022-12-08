@@ -21,7 +21,7 @@ def main():
     # print(f'=============================')
     # keyword = input('请输入关键字：')
 
-    keyword = '航拍沙滩'
+    keyword = '航拍沙漠'
     th_pool = ThreadPoolExecutor(10)
     # 关键字爬虫
     th_pool.submit(keyword_baidu_spider.BaiduSpider.run, keyword)  # 百度爬虫
@@ -31,11 +31,11 @@ def main():
     th_pool.submit(keyword_chinaso_spider.ChinaSoSpider.run, keyword)  # 中国搜索爬虫
 
     # 图片爬虫
-    th_pool.submit(img_baidu_spider.BaiduSpider.run, keyword)
+    # th_pool.submit(img_baidu_spider.BaiduSpider.run, keyword)
 
     th_pool.shutdown()
 
 
 if __name__ == '__main__':
-    # main()
-    baidu_spider = img_baidu_spider.BaiduSpider.run('美女')
+    main()
+    # baidu_spider = img_baidu_spider.BaiduSpider.run('美女')

@@ -3,11 +3,8 @@
 # @Date    ：2022/11/17 22:40  
 
 import re
-import asyncio
 from .base_spider import BaseSpider
-import conf.conf as conf
 import json
-import conf.model as model
 
 
 # 关键字爬虫：根据关键字，爬取相关页面，产出imgurl
@@ -31,11 +28,10 @@ class BingSpider(BaseSpider):
         super().__init__(keyword)
 
     @classmethod
-    def extract(cls, response):
+    def extract(cls, html):
         data_list = []
         # 数据抽取
-        text = response.text
-        json_content = re.sub(r'&quot;', '"', text)
+        json_content = re.sub(r'&quot;', '"', html)
         res = re.findall('m="(\{.*?\})"', json_content)
         for item in res:
             item = json.loads(item) or {}

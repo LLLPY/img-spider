@@ -4,7 +4,7 @@
 from selenium.webdriver.common.by import By
 import time
 from .base_spider import BaseSpider
-import conf.model as model
+import model.models as model
 
 
 class BaiduSpider(BaseSpider):
