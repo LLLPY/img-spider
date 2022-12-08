@@ -14,7 +14,7 @@ class _360Spider(BaseSpider):
     SOURCE = '360'
 
     def __init__(self, keyword: str) -> None:
-        super().__init__(keyword)
+        super().__init__(keyword=keyword)
 
     # 3.抽取规则，从接口响应的数据中抽取出图片和页面的地址
     @classmethod
@@ -39,7 +39,3 @@ class _360Spider(BaseSpider):
         return data_list
 
 
-
-
-if __name__ == '__main__':
-    pass

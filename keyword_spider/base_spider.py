@@ -8,7 +8,7 @@ from lxml import etree
 import re
 import time
 import conf.conf as conf
-import conf.model as model
+import model.models as model
 from urllib.request import urlretrieve
 from selenium.webdriver import Chrome
 
