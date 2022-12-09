@@ -1,7 +1,6 @@
 # -*- coding: UTF-8 -*-                            
 # @Author  ：LLL                         
 # @Date    ：2022/11/7 21:59  
-import queue
 import os
 import sys
 import selenium.webdriver.chrome.service as chrome_service
@@ -10,7 +9,6 @@ import socket
 
 sys.path.append('..' + os.sep)
 import log.logger as log
-import file_system.file_system as file_system
 import client.client as client
 
 # 设置timeout时间为6秒
@@ -19,9 +17,6 @@ socket.setdefaulttimeout(6)
 # workdir
 workdir = os.path.abspath('.')  # 工作目录
 
-
-my_api_crawled_pickle = file_system.MyPickle(os.path.join(workdir, 'data', 'set', 'api_crawled_set'))
-api_crawled_set = my_api_crawled_pickle.load()
 
 # 日志器
 img_spider_logger = log.MyLogger().get_logger()

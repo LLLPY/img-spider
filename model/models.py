@@ -41,14 +41,14 @@ class Base:
         self.uid = int(uuid.uuid3(uuid.NAMESPACE_URL, self.url).hex, 16)  # 唯一标识
 
     @classmethod
-    def to_hash(cls, url):
+    def to_hash(cls, url:str)->int:
         return int(uuid.uuid3(uuid.NAMESPACE_URL, url).hex, 16)
 
     def __hash__(self) -> int:
         return self.uid
 
     # 将一个对象转成一个字典
-    def to_dict(self):
+    def to_dict(self)->dict:
         dict_con = {
             'keyword': self.keyword,
             'url': self.url,
@@ -63,7 +63,7 @@ class Base:
         return dict_con
 
     # 创建文件保存的路径
-    def create_save_path(self):
+    def create_save_path(self)->str:
         date_now = datetime.datetime.now()
         return os.path.join(workdir, 'data', self.keyword, str(date_now.year), str(
             date_now.month), str(date_now.day), str(self.uid) + '.jpg')
@@ -82,23 +82,28 @@ class Base:
         img_obj.uid = obj_dict.get('uid', cls.to_hash(img_obj.url))
         return img_obj
 
-    @classmethod
-    def str_to_datetime(cls, datetime_str):
-        return datetime.datetime.strptime(datetime_str, '%Y-%m-%d %H:%M:%S')
 
+#API
+class API(Base):
+    
+    def __init__(self, keyword: str, url: str, source: str, status: int = Base.STATUS_UNCRAWL, crawl_time=datetime.datetime.now(), desc: str = '', err_msg: str = '') -> None:
+        super().__init__(keyword, url, source, status, crawl_time, desc, err_msg)
+    
 
 # 页面
 class Page(Base):
     def __init__(self, keyword: str, url: str, source: str, status: int = Base.STATUS_UNCRAWL,
-                 crawl_time=datetime.datetime.now(), desc: str = '', err_msg: str = '', deep=1):
+                 crawl_time=datetime.datetime.now(), desc: str = '', err_msg: str = '', deep:int=1,api:str=''):
         self.deep = deep  # 爬取深度
+        self.api=api
         super().__init__(keyword=keyword, url=url, source=source, status=status, crawl_time=crawl_time, desc=desc,
                          err_msg=err_msg)
 
-    def to_dict(self):
+    def to_dict(self)->dict:
         dict_con = super(Page, self).to_dict()
         dict_con.update({
-            'deep': self.deep
+            'deep': self.deep,
+            'api':self.api,
         })
         return dict_con
 
@@ -111,12 +116,18 @@ class Page(Base):
 
 # 图片
 class Img(Base):
+    
+    FILE_IMAGE=0 #图片
+    FILE_VIDEO=1 #视频
+    
     def __init__(self, keyword: str, url: str, source: str, thumb_url: str = '', page_url: str = '',
                  status: int = Base.STATUS_UNCRAWL, crawl_time=datetime.datetime.now(),
-                 desc: str = '', err_msg: str = '', qualify: int = Base.UNQUALIFY):
+                 desc: str = '', err_msg: str = '', qualify: int = Base.UNQUALIFY,file_type:int=FILE_IMAGE,api:str=''):
         self.thumb_url = thumb_url  # 缩略图
         self.page_url = page_url  # 图片所在的页面
         self.qualify = qualify  # 是否合格,默认不合格
+        self.file_type=file_type #文件类型
+        self.api=api #api
         super().__init__(keyword=keyword, url=url, source=source, status=status, crawl_time=crawl_time, desc=desc,
                          err_msg=err_msg)
         self.save_path = self.create_save_path()  # 保存的地址
@@ -127,6 +138,8 @@ class Img(Base):
             'thumb_url': self.thumb_url,
             'page_url': self.page_url,
             'qualify': self.qualify,
+            'file_type':self.file_type,
+            'api':self.api,
 
         })
         return dict_con
