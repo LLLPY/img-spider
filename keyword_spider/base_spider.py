@@ -2,6 +2,8 @@
 # @Author  ：LLL                         
 # @Date    ：2022/11/7 22:01
 import asyncio
+import random
+
 import aiohttp
 import requests
 from lxml import etree
@@ -207,7 +209,7 @@ class BaseSpider:
 
     # 获取页面上的page和img
     async def get_page_and_img_on_page(self):
-
+        time.sleep(random.randint(5, 8))
         self.logger.warning(f'{self.__class__.__name__}开始抓取页面上的链接...')
         while True:
 
@@ -302,7 +304,7 @@ class BaseSpider:
     async def gather_task(cls, keyword: str) -> None:
         spider = cls(keyword)
         await asyncio.gather(
-            # spider.get_page_and_img_on_api(),
+            spider.get_page_and_img_on_api(),
             spider.get_page_and_img_on_page(),
         )
 
