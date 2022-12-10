@@ -23,54 +23,56 @@ class BaiduSpider(BaseSpider):
     }
     SOURCE = '百度'
     encrypt_mapping = {
-            'w': "a",
-            'k': "b",
-            'v': "c",
-            '1': "d",
-            'j': "e",
-            'u': "f",
-            '2': "g",
-            'i': "h",
-            't': "i",
-            '3': "j",
-            'h': "k",
-            's': "l",
-            '4': "m",
-            'g': "n",
-            '5': "o",
-            'r': "p",
-            'q': "q",
-            '6': "r",
-            'f': "s",
-            'p': "t",
-            '7': "u",
-            'e': "v",
-            'o': "w",
-            '8': "1",
-            'd': "2",
-            'n': "3",
-            '9': "4",
-            'c': "5",
-            'm': "6",
-            '0': "7",
-            'b': "8",
-            'l': "9",
-            'a': "0",
-            '_z2C$q': ":",
-            "_z&e3B": ".",
-            'AzdH3F': "/"
-        }  # 映射表
+        'w': "a",
+        'k': "b",
+        'v': "c",
+        '1': "d",
+        'j': "e",
+        'u': "f",
+        '2': "g",
+        'i': "h",
+        't': "i",
+        '3': "j",
+        'h': "k",
+        's': "l",
+        '4': "m",
+        'g': "n",
+        '5': "o",
+        'r': "p",
+        'q': "q",
+        '6': "r",
+        'f': "s",
+        'p': "t",
+        '7': "u",
+        'e': "v",
+        'o': "w",
+        '8': "1",
+        'd': "2",
+        'n': "3",
+        '9': "4",
+        'c': "5",
+        'm': "6",
+        '0': "7",
+        'b': "8",
+        'l': "9",
+        'a': "0",
+        '_z2C$q': ":",
+        "_z&e3B": ".",
+        'AzdH3F': "/"
+    }  # 映射表
+
     def __init__(self, keyword: str) -> None:
         super().__init__(keyword)
 
     @classmethod
     def extract(cls, html):
-        
-        #josn解析失败了就用正则来解析
+
+        # josn解析失败了就用正则来解析
         try:
             json_content = json.loads(html)
             item_list = json_content.get('data', [])
-        except:
+        except Exception as e:
+            print(e)
             item_list = cls.extract_with_re(html)
 
         data_list = []
@@ -98,7 +100,7 @@ class BaiduSpider(BaseSpider):
         desc_list = re.findall(r'fromPageTitleEnc":"(.*?)"', html)
         for item in zip(thumb_img_list, page_list, desc_list):
             item = {
-                'objURL': item[0], 
+                'objURL': item[0],
                 'fromURL': item[1],
                 'fromPageTitleEnc': item[2],
             }
@@ -107,8 +109,8 @@ class BaiduSpider(BaseSpider):
 
     # 解析加密的url
     @classmethod
-    def parse_encrypt_url(cls,encrypt_url: str) -> str:
-        
+    def parse_encrypt_url(cls, encrypt_url: str) -> str:
+
         encrypt_url = re.sub('AzdH3F', '/', encrypt_url)  # 替换
         encrypt_url = re.sub("_z&e3B", ".", encrypt_url)
         encrypt_url = re.sub('_z2C\$q', ":", encrypt_url)
@@ -118,8 +120,6 @@ class BaiduSpider(BaseSpider):
                 c = cls.encrypt_mapping[c]
             url_list.append(c)
         return ''.join(url_list)
-
-
 
 
 if __name__ == '__main__':
