@@ -1,5 +1,8 @@
+from urllib.parse import urlparse
 
-
-#https://pic1.ntimg.cn/pic/20221101/27260766_173634622102_4.jpg
-#https://www.nipic.com/pic1.ntimg.cn/pic/20221101/27260766_173634622102_4.jpg
-#https://pic4.ntimg.cn/pic/20220901/27588086_100155159104_4.jpg
+a='https://www.lll.plus/aaa/bb/cc'
+host =a.replace('//', '*').split('/', 1)[0].replace('*', '//')
+b=urlparse(a)
+print(b.hostname)
+print(b.path)
+print(b.scheme)
