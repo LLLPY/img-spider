@@ -29,7 +29,6 @@ def main():
     th_pool.submit(keyword_bing_spider.BingSpider.run, keyword)  # bing爬虫
     th_pool.submit(keyword_sougou_spider.SouGouSpider.run, keyword)  # 搜狗爬虫
     th_pool.submit(keyword_chinaso_spider.ChinaSoSpider.run, keyword)  # 中国搜索爬虫
-    # keyword_baidu_spider.BaiduSpider.run(keyword)
     # 图片爬虫
     # th_pool.submit(img_baidu_spider.BaiduSpider.run, keyword)
 

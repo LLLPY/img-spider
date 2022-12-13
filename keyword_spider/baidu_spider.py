@@ -4,11 +4,13 @@
 import json
 import re
 from .base_spider import BaseSpider
-
+from typing import *
 
 # 关键字爬虫：根据关键字，爬取相关页面，产出imgurl
 class BaiduSpider(BaseSpider):
+    
     API = 'https://image.baidu.com/search/acjson?tn=resultjson_com&ipn=rj&fp=result&word={}&cl=2&lm=-1&ie=utf-8&oe=utf-8&pn={}&rn={}'
+    SOURCE = '百度'
     HEADERS = {
         'Accept': 'text/plain, */*; q=0.01', 'Accept-Encoding': 'gzip, deflate, br',
         'Accept-Language': 'zh-CN,zh;q=0.9', 'Connection': 'keep-alive',
@@ -21,7 +23,6 @@ class BaiduSpider(BaseSpider):
         'X-Requested-With': 'XMLHttpRequest',
         'cookie': 'BIDUPSID=DAF9F732F5E7194E4C40073E6D597F5C; PSTM=1635870319; BD_UPN=12314753; __yjs_duid=1_c9e50b0601fb34e9d5496d8d586043011635987389929; BAIDUID=6C15C2AA607EF52C69767D84A939DFCD:FG=1; BDORZ=B490B5EBF6F3CD402E515D22BCDA1598; BAIDUID_BFESS=6C15C2AA607EF52C69767D84A939DFCD:FG=1; ZFY=XUrg3jWgemJTVFpiSSQpTPSVLsGT4AKjYDjak7GWm:BU:C; channel=baidusearch; B64_BOT=1; BD_HOME=1; H_PS_PSSID=37856_36553_37771_37840_34812_37765_37794_37836_37760_37850_26350_37479; delPer=0; BD_CK_SAM=1; PSINO=1; BA_HECTOR=8101850k8k8l2ga18h848ksn1hoc0fv1h; baikeVisitId=3a8b8892-ce10-4062-b40d-823ec6b54aa2; BDRCVFR[tox4WRQ4-Km]=mk3SLVN4HKm; BDRCVFR[-pGxjrCMryR]=mk3SLVN4HKm; ab_sr=1.0.1_Mzc2ODg2NTU0YjUyNTE1ZWI1OWNjNjVmMmE3YjIyMDc4MDk2MDMwYzI5NTNhOTE4ZWJmNTNhMjQyYjk2MDJiNjc3ZjQ5NTgzNjdmNTQ5YTY3YWY0MWViYzM0NWZlOThhODFmMGQ4ZDlkNGM3MDIxODE4MGM4MGJhYTgzYWEzMzhlNTA4YjI0YmQ3YjgxMjQ0NTEwYTk0NDYwNjkzNGExMw==; COOKIE_SESSION=2410_0_5_5_6_11_0_0_4_3_0_2_8156_0_0_0_1669559295_0_1669729129%7C9%23191_7_1669206482%7C3; H_PS_645EC=27f7%2FyFYd1VMsNCQsd%2Ff4Q0gNH1syKuLpfq5Cu2ys3Tt0ZHSicpCtz7Jk0E'
     }
-    SOURCE = '百度'
     encrypt_mapping = {
         'w': "a",
         'k': "b",
@@ -65,14 +66,14 @@ class BaiduSpider(BaseSpider):
         super().__init__(keyword)
 
     @classmethod
-    def extract(cls, html):
+    def extract(cls, html:str)->List[Dict]:
 
         # josn解析失败了就用正则来解析
         try:
             json_content = json.loads(html)
             item_list = json_content.get('data', [])
         except Exception as e:
-            print(e)
+            cls.logger.warning(f'[{cls.__name__}]json内容抽取失败...e:{e}')
             item_list = cls.extract_with_re(html)
 
         data_list = []
@@ -92,7 +93,7 @@ class BaiduSpider(BaseSpider):
         return data_list
 
     @staticmethod
-    def extract_with_re(html):
+    def extract_with_re(html:str)->List[Dict]:
         item_list = []
         # origin_img_list=re.findall(r'objURL":"(.*?)"',html)
         thumb_img_list = re.findall(r'thumbURL":"(.*?)"', html)

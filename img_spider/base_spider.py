@@ -6,19 +6,19 @@ import time
 import conf.conf as conf
 import os
 from selenium.webdriver import Chrome
-from concurrent.futures import ThreadPoolExecutor
 import re
 import model.models as model
 from urllib.request import urlretrieve
-
-
+from typing import *
+import asyncio
 # 工人
 class ChromeWorker:
+    
     STATUS_READY = 0
     STATUS_RUNNING = 1
     STATUS_DONE = 2
 
-    def __init__(self):
+    def __init__(self)->None:
         self.status = self.STATUS_READY  # 0:待启动 1:运行中 2:运行结束
         self.chrome = Chrome(service=conf.CHROMEDRIVER_SERVICE, options=conf.chrome_options)
 
@@ -87,17 +87,18 @@ class BaseSpider:
     # chrome_pool = ChromeWorkerManager(5)
 
     # 初始化时只需要知道keyword即可
-    def __init__(self, keyword):
+    def __init__(self, keyword:str)->None:
         self.keyword = keyword
         self.chrome = Chrome(service=conf.CHROMEDRIVER_SERVICE, options=conf.chrome_options)
         self.img_queue = queue.Queue()  # 图片消费队列
         self.img_crawled_queue = queue.Queue()  # 下载完成的图片队列
+        self.logger.warning(f'[{self.__class__.__name__}]已启动...')
 
-    def __del__(self):
+    def __del__(self)->None:
         try:
             self.chrome.close()
         except Exception as e:
-            conf.img_spider_logger.error(f'浏览器窗口关闭失败...错误原因:{e}')
+            conf.img_spider_logger.error(f'[{self.__class__.__name__}]浏览器窗口关闭失败...错误原因:{e}')
 
     # 抽取页面内容
     def extract_page(self, page_obj, page_html):
@@ -212,12 +213,20 @@ class BaseSpider:
 
     def get_img_link_by_img(self):
         pass
+    
 
+    
     @classmethod
-    def run(cls, keyword):
+    async def gather_task(cls, keyword: str) -> None:
+
         spider = cls(keyword)
-        th_pool = ThreadPoolExecutor(5)
-        # th_pool.submit(spider.get_img_link_by_img)
-        th_pool.submit(spider.download_imgs)
-        th_pool.submit(spider.timed_upload_img)
-        th_pool.shutdown()
+        await asyncio.gather(
+            spider.get_img_link_by_img(),
+            spider.download_imgs(),
+            spider.timed_upload_img(),
+        )
+
+    # 启动
+    @classmethod
+    def run(cls, keyword: str) -> None:
+        asyncio.run(cls.gather_task(keyword))

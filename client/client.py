@@ -5,6 +5,7 @@ from typing import *
 
 
 class Client:
+    
     HOST = 'http://127.0.0.1'
     # HOST = 'http://www.lll.plus'
     PORT = '80'
