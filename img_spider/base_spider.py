@@ -11,6 +11,7 @@ import model.models as model
 from urllib.request import urlretrieve
 from typing import *
 import asyncio
+from concurrent.futures import ThreadPoolExecutor
 # 工人
 class ChromeWorker:
     
@@ -211,19 +212,37 @@ class BaseSpider:
                     self.logger.warning(f'{self.__class__.__name__}图片下载结束...')
                     break
 
-    def get_img_link_by_img(self):
+    def get_img_and_page_by_img(self,img_obj):
         pass
     
-
+    
+    #执行img_spider
+    async def run_img_spider(self):
+        
+        while True:
+            img_res = await self.client.get_uncrawl_img_by_keyword(self.keyword)
+            if img_res['code'] != '200':
+                msg = img_res['msg']
+                self.logger.error(f'[{self.__class__.__name__}]获取img失败,msg:{msg}...')
+                return
+                
+            img_dict = img_res['data']
+            if not img_dict:
+                self.logger.warning(f'[{self.__class__.__name__}]无可供识图的img,爬取结束...')
+                return
+            
+            img_obj=model.Img.to_obj(img_dict)
+            await self.get_img_and_page_by_img(img_obj)
+ 
     
     @classmethod
     async def gather_task(cls, keyword: str) -> None:
 
         spider = cls(keyword)
         await asyncio.gather(
-            spider.get_img_link_by_img(),
-            spider.download_imgs(),
-            spider.timed_upload_img(),
+            spider.run_img_spider(),
+            # spider.download_imgs(),
+            # spider.timed_upload_img(),
         )
 
     # 启动

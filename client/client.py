@@ -7,7 +7,7 @@ from typing import *
 class Client:
     
     HOST = 'http://127.0.0.1'
-    # HOST = 'http://www.lll.plus'
+    HOST = 'http://www.lll.plus'
     PORT = '80'
     img_server_prefix = 'img-spider-server/img_server'
     page_server_prefix = 'img-spider-server/page_server'
@@ -29,7 +29,9 @@ class Client:
         timeout = aiohttp.ClientTimeout(total=10)  # 10秒过期
         async with aiohttp.ClientSession(timeout=timeout) as session:
             async with session.post(url, headers=cls.HEADERS, data=data) as response:
-                json_content = await response.json(content_type='application/json', encoding='utf-8')
+                # json_content = await response.json(content_type='application/json', encoding='utf-8')
+                print(await response.text())
+                json_content = json.loads(await response.text())
                 return json_content
 
     # 获取关键字列表
@@ -55,8 +57,9 @@ class Client:
         data = {
             'page_list': json.dumps(page_list),
         }
-
+        print(66666)
         json_content = await self.async_post(url, data=data)
+        print(json_content)
         return json_content
 
     # 检测重复的uid
@@ -134,5 +137,7 @@ class Client:
 
 if __name__ == '__main__':
     client = Client()
-    res = asyncio.run(client.get_ready_page('航拍工地'))
+    page_dict_list=[{'keyword': '大象', 'url': 'https://graph.baidu.com/pcpage/similar?originSign=12634610933816428704201671007772&srcp=crs_pc_similar&tn=pc&idctag=gz&sids=10007_10521_10968_10974_11031_17850_17070_18101_17200_17202_18311_19195_19162_19215_19268_19280_19670_19807_20001_20013_20046_20060_20073_20081_20090_20133_20140_20162_20172_20181_20193_20220_20230_20243_20250_20271_20282_20292_20304_20310_1059043_1065801_20260&gsid=&logid=2290516633&entrance=general&tpl_from=pc&pageFrom=graph_upload_pcshitu&inspire=general&image=http%3A%2F%2Fmms1.baidu.com%2Fit%2Fu%3D338370534%2C1727923326%26fm%3D253%26app%3D138%26f%3DJPEG%3Fw%3D750%26h%3D500&carousel=503&index=28&page=40&shituToken=e75c70', 'source': '百度', 'status': 0, 'crawl_time': 1671007753.088035, 'desc': '', 'err_msg': '', 'uid': 166694579410544107287144189241767364810, 'deep': 1, 'api': ''}, {'keyword': '大象', 'url': 'https://graph.baidu.com/pcpage/similar?originSign=12634610933816428704201671007772&srcp=crs_pc_similar&tn=pc&idctag=gz&sids=10007_10521_10968_10974_11031_17850_17070_18101_17200_17202_18311_19195_19162_19215_19268_19280_19670_19807_20001_20013_20046_20060_20073_20081_20090_20133_20140_20162_20172_20181_20193_20220_20230_20243_20250_20271_20282_20292_20304_20310_1059043_1065801_20260&gsid=&logid=2290516633&entrance=general&tpl_from=pc&pageFrom=graph_upload_pcshitu&inspire=general&image=http%3A%2F%2Fmms0.baidu.com%2Fit%2Fu%3D2288434759%2C3546229732%26fm%3D253%26app%3D120%26f%3DJPEG%3Fw%3D500%26h%3D375&carousel=503&index=1&page=6&shituToken=4dff73', 'source': '百度', 'status': 0, 'crawl_time': 1671007753.088035, 'desc': '', 'err_msg': '', 'uid': 24294272369977674752564750235943157450, 'deep': 1, 'api': ''}, {'keyword': '大象', 'url': 'https://graph.baidu.com/pcpage/similar?originSign=12634610933816428704201671007772&srcp=crs_pc_similar&tn=pc&idctag=gz&sids=10007_10521_10968_10974_11031_17850_17070_18101_17200_17202_18311_19195_19162_19215_19268_19280_19670_19807_20001_20013_20046_20060_20073_20081_20090_20133_20140_20162_20172_20181_20193_20220_20230_20243_20250_20271_20282_20292_20304_20310_1059043_1065801_20260&gsid=&logid=2290516633&entrance=general&tpl_from=pc&pageFrom=graph_upload_pcshitu&inspire=general&image=http%3A%2F%2Fmms2.baidu.com%2Fit%2Fu%3D3396983850%2C1758481809%26fm%3D253%26app%3D138%26f%3DJPEG%3Fw%3D738%26h%3D500&carousel=503&index=25&page=20&shituToken=2d8f75', 'source': '百度', 'status': 0, 'crawl_time': 1671007753.088035, 'desc': '', 'err_msg': '', 'uid': 253920554605044482224791717059732226655, 'deep': 1, 'api': ''}, {'keyword': '大象', 'url': 'https://graph.baidu.com/pcpage/similar?originSign=12634610933816428704201671007772&srcp=crs_pc_similar&tn=pc&idctag=gz&sids=10007_10521_10968_10974_11031_17850_17070_18101_17200_17202_18311_19195_19162_19215_19268_19280_19670_19807_20001_20013_20046_20060_20073_20081_20090_20133_20140_20162_20172_20181_20193_20220_20230_20243_20250_20271_20282_20292_20304_20310_1059043_1065801_20260&gsid=&logid=2290516633&entrance=general&tpl_from=pc&pageFrom=graph_upload_pcshitu&inspire=general&image=http%3A%2F%2Fmms2.baidu.com%2Fit%2Fu%3D2825719914%2C3342725340%26fm%3D253%26app%3D138%26f%3DJPEG%3Fw%3D450%26h%3D320&carousel=503&index=29&page=35&shituToken=bef22d', 'source': '百度', 'status': 0, 'crawl_time': 1671007753.088035, 'desc': '', 'err_msg': '', 'uid': 114990179503012202466866694316095180323, 'deep': 1, 'api': ''}, {'keyword': '大象', 'url': 'https://graph.baidu.com/pcpage/similar?originSign=12634610933816428704201671007772&srcp=crs_pc_similar&tn=pc&idctag=gz&sids=10007_10521_10968_10974_11031_17850_17070_18101_17200_17202_18311_19195_19162_19215_19268_19280_19670_19807_20001_20013_20046_20060_20073_20081_20090_20133_20140_20162_20172_20181_20193_20220_20230_20243_20250_20271_20282_20292_20304_20310_1059043_1065801_20260&gsid=&logid=2290516633&entrance=general&tpl_from=pc&pageFrom=graph_upload_pcshitu&inspire=general&image=http%3A%2F%2Fmms0.baidu.com%2Fit%2Fu%3D3845637146%2C2650320396%26fm%3D253%26app%3D138%26f%3DJPEG%3Fw%3D333%26h%3D500&carousel=503&index=11&page=47&shituToken=a05d20', 'source': '百度', 'status': 0, 'crawl_time': 1671007753.088035, 'desc': '', 'err_msg': '', 'uid': 270772898336467908701664701353370484793, 'deep': 1, 'api': ''}, {'keyword': '大象', 'url': 'https://graph.baidu.com/pcpage/similar?originSign=12634610933816428704201671007772&srcp=crs_pc_similar&tn=pc&idctag=gz&sids=10007_10521_10968_10974_11031_17850_17070_18101_17200_17202_18311_19195_19162_19215_19268_19280_19670_19807_20001_20013_20046_20060_20073_20081_20090_20133_20140_20162_20172_20181_20193_20220_20230_20243_20250_20271_20282_20292_20304_20310_1059043_1065801_20260&gsid=&logid=2290516633&entrance=general&tpl_from=pc&pageFrom=graph_upload_pcshitu&inspire=general&image=http%3A%2F%2Fmms2.baidu.com%2Fit%2Fu%3D373255366%2C1648488206%26fm%3D253%26app%3D138%26f%3DJPEG%3Fw%3D752%26h%3D500&carousel=503&index=26&page=5&shituToken=39d6c2', 'source': '百度', 'status': 0, 'crawl_time': 1671007753.088035, 'desc': '', 'err_msg': '', 'uid': 194743338727000706754834856954645053486, 'deep': 1, 'api': ''}]
+    # res = asyncio.run(client.upload_page(page_dict_list))
+    res = asyncio.run(client.get_keyword_list())
     print(res)
