@@ -29,9 +29,9 @@ class Client:
         timeout = aiohttp.ClientTimeout(total=10)  # 10秒过期
         async with aiohttp.ClientSession(timeout=timeout) as session:
             async with session.post(url, headers=cls.HEADERS, data=data) as response:
-                # json_content = await response.json(content_type='application/json', encoding='utf-8')
-                print(await response.text())
-                json_content = json.loads(await response.text())
+                json_content = await response.json(content_type='application/json', encoding='utf-8')
+                # print(await response.text())
+                # json_content = json.loads(await response.text())
                 return json_content
 
     # 获取关键字列表
