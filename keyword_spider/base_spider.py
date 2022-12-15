@@ -15,7 +15,6 @@ from typing import *
 
 
 class BaseSpider:
-
     API = None
     SOURCE = None
 

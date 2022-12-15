@@ -131,16 +131,19 @@ class Page(Base):
 class Img(Base):
     FILE_IMAGE = 0  # 图片
     FILE_VIDEO = 1  # 视频
+    UNDOWNLOAD = 0  # 未下载
+    DOWNLOADED = 1  # 已下载
 
     def __init__(self, keyword: str, url: str, source: str, thumb_url: str = '', page_url: str = '',
                  status: int = Base.STATUS_UNCRAWL, crawl_time=datetime.datetime.now(),
                  desc: str = '', err_msg: str = '', qualify: int = Base.UNQUALIFY, file_type: int = FILE_IMAGE,
-                 api: str = ''):
+                 api: str = '', download=UNDOWNLOAD):
         self.thumb_url = thumb_url  # 缩略图
         self.page_url = page_url  # 图片所在的页面
         self.qualify = qualify  # 是否合格,默认不合格
         self.file_type = file_type  # 文件类型
         self.api = api  # api
+        self.download = download  # 是否已下载
         super().__init__(keyword=keyword, url=url, source=source, status=status, crawl_time=crawl_time, desc=desc,
                          err_msg=err_msg)
         self.save_path = self.create_save_path()  # 保存的地址
@@ -153,6 +156,7 @@ class Img(Base):
             'qualify': self.qualify,
             'file_type': self.file_type,
             'api': self.api,
+            'download': self.download
 
         })
         return dict_con

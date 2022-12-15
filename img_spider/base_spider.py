@@ -12,14 +12,15 @@ from urllib.request import urlretrieve
 from typing import *
 import asyncio
 from concurrent.futures import ThreadPoolExecutor
+
+
 # 工人
 class ChromeWorker:
-    
     STATUS_READY = 0
     STATUS_RUNNING = 1
     STATUS_DONE = 2
 
-    def __init__(self)->None:
+    def __init__(self) -> None:
         self.status = self.STATUS_READY  # 0:待启动 1:运行中 2:运行结束
         self.chrome = Chrome(service=conf.CHROMEDRIVER_SERVICE, options=conf.chrome_options)
 
@@ -88,14 +89,14 @@ class BaseSpider:
     # chrome_pool = ChromeWorkerManager(5)
 
     # 初始化时只需要知道keyword即可
-    def __init__(self, keyword:str)->None:
+    def __init__(self, keyword: str) -> None:
         self.keyword = keyword
         self.chrome = Chrome(service=conf.CHROMEDRIVER_SERVICE, options=conf.chrome_options)
         self.img_queue = queue.Queue()  # 图片消费队列
         self.img_crawled_queue = queue.Queue()  # 下载完成的图片队列
         self.logger.warning(f'[{self.__class__.__name__}]已启动...')
 
-    def __del__(self)->None:
+    def __del__(self) -> None:
         try:
             self.chrome.close()
         except Exception as e:
@@ -212,29 +213,27 @@ class BaseSpider:
                     self.logger.warning(f'{self.__class__.__name__}图片下载结束...')
                     break
 
-    def get_img_and_page_by_img(self,img_obj):
+    async def get_img_and_page_by_img(self, img_obj):
         pass
-    
-    
-    #执行img_spider
+
+    # 执行img_spider
     async def run_img_spider(self):
-        
+
         while True:
             img_res = await self.client.get_uncrawl_img_by_keyword(self.keyword)
             if img_res['code'] != '200':
                 msg = img_res['msg']
                 self.logger.error(f'[{self.__class__.__name__}]获取img失败,msg:{msg}...')
                 return
-                
+
             img_dict = img_res['data']
             if not img_dict:
                 self.logger.warning(f'[{self.__class__.__name__}]无可供识图的img,爬取结束...')
                 return
-            
-            img_obj=model.Img.to_obj(img_dict)
+
+            img_obj = model.Img.to_obj(img_dict)
             await self.get_img_and_page_by_img(img_obj)
- 
-    
+
     @classmethod
     async def gather_task(cls, keyword: str) -> None:
 
