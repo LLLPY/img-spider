@@ -8,9 +8,9 @@ import time
 import asyncio
 from concurrent.futures import ThreadPoolExecutor
 
+
 # 用于下载的爬虫
 class DownloadSpider:
-
     # 日志器
     logger = conf.img_spider_logger
 
@@ -54,7 +54,7 @@ class DownloadSpider:
         if success == '成功':
             img_obj.download = model.Img.DOWNLOADED
         else:
-            img_obj.download = model.Img.UNDOWNLOAD
+            img_obj.download = model.Img.DOWNLOADERROR
         msg = result['msg']
         cls.logger.info(
             f'[{cls.__name__}]下载{success},msg:{msg},剩余{cls.img_queue.qsize()}待爬取...img_url:{img_obj.url}')
@@ -62,7 +62,7 @@ class DownloadSpider:
 
     # 补充消费队列
     async def supply_img_queue(self) -> None:
-        res = await self.client.get_ready_img_list(self.keyword)
+        res = await self.client.get_undownload_img_list(self.keyword)
 
         if res['code'] == '200':
             img_dict_list = res['data']
@@ -93,7 +93,8 @@ class DownloadSpider:
                     img_dict_list.append(img_obj.to_dict())
 
                 if img_dict_list:
-                    res = await cls.client.upload_img(img_dict_list)
+                    res = await cls.client.update_img(img_dict_list)
+
                     if res['code'] == '200':
                         cls.logger.info(
                             f'[{cls.__name__}]图片状态更新成功,上传了{len(img_dict_list)}个图片...')
@@ -104,6 +105,7 @@ class DownloadSpider:
 
                 start = time.time()
 
+            print(1111,cls.img_crawled_queue.qsize())
             # end
             for _ in range(15):
                 await asyncio.sleep(1)
@@ -155,7 +157,7 @@ class DownloadSpider:
         spider = cls(keyword)
         await asyncio.gather(
             spider.download_imgs(),
-            # spider.timed_upload_img(),
+            spider.timed_upload_img(),
 
         )
 

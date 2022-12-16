@@ -133,6 +133,8 @@ class Img(Base):
     FILE_VIDEO = 1  # 视频
     UNDOWNLOAD = 0  # 未下载
     DOWNLOADED = 1  # 已下载
+    DOWNLOADIMG = 2  # 下载中
+    DOWNLOADERROR = 3  # 下载失败
 
     def __init__(self, keyword: str, url: str, source: str, thumb_url: str = '', page_url: str = '',
                  status: int = Base.STATUS_UNCRAWL, crawl_time=datetime.datetime.now(),
