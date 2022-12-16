@@ -7,7 +7,7 @@ from .base_spider import BaseSpider
 from typing import *
 
 # 关键字爬虫：根据关键字，爬取相关页面，产出imgurl
-class BaiduSpider(BaseSpider):
+class KeywordBaiduSpider(BaseSpider):
     
     API = 'https://image.baidu.com/search/acjson?tn=resultjson_com&ipn=rj&fp=result&word={}&cl=2&lm=-1&ie=utf-8&oe=utf-8&pn={}&rn={}'
     SOURCE = '百度'

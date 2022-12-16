@@ -8,7 +8,7 @@ import json
 from typing import *
 
 # 关键字爬虫：根据关键字，爬取相关页面，产出imgurl
-class BingSpider(BaseSpider):
+class KeywordBingSpider(BaseSpider):
     
     API = 'https://cn.bing.com/images/async?q={}&first={}&count={}&datsrc=I&layout=RowBased_Landscape&mmasync=1'
     SOURCE = 'bing'

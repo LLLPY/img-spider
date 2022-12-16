@@ -8,7 +8,7 @@ from typing import *
 
 
 # 关键字爬虫：根据关键字，爬取相关页面，产出imgurl
-class ChinaSoSpider(BaseSpider):
+class KeywordChinaSoSpider(BaseSpider):
     API = 'https://www.chinaso.com/v5/general/v1/search/image?q={}&start_index={}&rn={}'
     SOURCE = '中国搜索'
     HEADERS = {

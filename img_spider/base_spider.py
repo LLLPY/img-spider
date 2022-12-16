@@ -1,17 +1,15 @@
-# -*- coding: UTF-8 -*-                            
-# @Author  ：LLL                         
+# -*- coding: UTF-8 -*-
+# @Author  ：LLL
 # @Date    ：2022/11/27 11:38
-import queue
+
 import time
 import conf.conf as conf
-import os
 from selenium.webdriver import Chrome
-import re
 import model.models as model
-from urllib.request import urlretrieve
 from typing import *
 import asyncio
 from concurrent.futures import ThreadPoolExecutor
+from selenium.webdriver.common.by import By
 
 
 # 工人
@@ -22,7 +20,8 @@ class ChromeWorker:
 
     def __init__(self) -> None:
         self.status = self.STATUS_READY  # 0:待启动 1:运行中 2:运行结束
-        self.chrome = Chrome(service=conf.CHROMEDRIVER_SERVICE, options=conf.chrome_options)
+        self.chrome = Chrome(
+            service=conf.CHROMEDRIVER_SERVICE, options=conf.chrome_options)
 
     # 启动
     def start(self, img_obj):
@@ -39,6 +38,7 @@ class ChromeWorker:
     def done(self, msg):
         res = msg.result()
         self.status = self.STATUS_READY
+        return res
 
     def close(self):
         self.chrome.close()
@@ -68,6 +68,7 @@ class ChromeWorkerManager:
 
 # 以图搜图
 class BaseSpider:
+
     HEADERS = conf.HEADERS
 
     # js注入
@@ -88,147 +89,143 @@ class BaseSpider:
     # chrome池,通过chrome请求网页
     # chrome_pool = ChromeWorkerManager(5)
 
+    API_URL = ''
+    CAMERA_XPATH = ''
+    INPUT_XPATH = ''
+    BUTTON_XPATH = ''
+    SOURCE = ''
+    # 页面上page的链接
+    link_xpath = ''
+
     # 初始化时只需要知道keyword即可
+
     def __init__(self, keyword: str) -> None:
         self.keyword = keyword
-        self.chrome = Chrome(service=conf.CHROMEDRIVER_SERVICE, options=conf.chrome_options)
-        self.img_queue = queue.Queue()  # 图片消费队列
-        self.img_crawled_queue = queue.Queue()  # 下载完成的图片队列
+        self.chrome = Chrome(
+            service=conf.CHROMEDRIVER_SERVICE, options=conf.chrome_options)
+
         self.logger.warning(f'[{self.__class__.__name__}]已启动...')
 
     def __del__(self) -> None:
         try:
             self.chrome.close()
         except Exception as e:
-            conf.img_spider_logger.error(f'[{self.__class__.__name__}]浏览器窗口关闭失败...错误原因:{e}')
+            conf.img_spider_logger.error(
+                f'[{self.__class__.__name__}]浏览器窗口关闭失败...错误原因:{e}')
 
-    # 抽取页面内容
-    def extract_page(self, page_obj, page_html):
-        pattern = r'<a.*href="(.*?)".*<img.*src="(.*?)".*</a>'
-        host = page_obj.url.split('/', 1)[0]
-        thumb_url_set = set()
-        # 匹配缩略图和页面链接
-        page_thumb_list = re.findall(pattern, page_html)
-        for page_thumb in page_thumb_list:
-            page_url = page_thumb[0].strip('/')
-            page_url = f'{host}/{page_url}'
-            page = model.Page(page_obj.keyword, page_url)
-            thumb_url = page_thumb[1]
-            thumb_url_set.add(thumb_url)
-            img = model.Img(page_obj.keyword, page_url, thumb_url, thumb_url)
+      # 通过图片搜索，获取相似图片的页面，提取页面中相似图片所在的页面链接
 
-        # 匹配原图
-        img_list = re.findall(r'<img.*src="(.*?)".*>', page_html)
-        for img in img_list:
-            if img not in thumb_url_set:
-                img_obj = model.Img(page_obj.url, img, img)
+    async def get_img_and_page_by_img(self, img_obj: model.Img):
 
-    def download_img_callback(self, msg):
-        result = msg.result()
-        status = result['status']
-        success = ['失败', '成功'][status]
-        img_obj = result['img_obj']
+        self.chrome.get(self.API_URL)
+        self.chrome.find_element(By.XPATH, self.CAMERA_XPATH).click()
+        self.chrome.find_element(
+            By.XPATH, self.INPUT_XPATH).send_keys(img_obj.url)
+        self.chrome.find_element(By.XPATH, self.BUTTON_XPATH).click()
 
-        if success == '成功':
-            img_obj.status = model.Img.STATUS_CRAWLED
-        else:
-            img_obj.status = model.Img.STATUS_ERROR
-        msg = result['msg']
-        self.logger.info(
-            f'下载{success},msg:{msg},剩余{self.img_queue.qsize()}待爬取...img_url:{img_obj.url}')
-        self.img_crawled_queue.put(img_obj)
+        # 等待5秒用于加载
+        await asyncio.sleep(5)
 
-    # 定时上传爬取完成的图片
-    def timed_upload_img(self):
-        self.logger.info(f'图片上传服务已启动...')
-        start = time.time()
+        # 启动页面下拉定时器
+        self.chrome.execute_script(self.setInterval_js)
+
+        page_url_set = set()
+        img_url_set = set()
         while True:
-            if self.img_crawled_queue.qsize() > 20 or time.time() - start > 10:
-                img_dict_list = []
-                while not self.img_crawled_queue.empty():
-                    img_obj = self.img_crawled_queue.get()
-                    img_dict_list.append(img_obj.to_dict())
-                if img_dict_list:
-                    res = self.client.update_img(img_dict_list)
-                    if res['code'] == '200':
-                        self.logger.info(f'图片上传成功,上传了{len(img_dict_list)}个图片...')
-                    else:
-                        msg = res['msg']
-                        self.logger.warning(f'图片上传失败,msg:{msg}...')
 
-                start = time.time()
-            time.sleep(1)
+            await asyncio.sleep(3)
 
-    # 下载图片
-    @classmethod
-    def download_img(cls, img_obj: model.Img):
-        # 创建下载目录
-        dirs = img_obj.save_path.rsplit(os.sep, 1)[0]
-        try:
-            if not os.path.isdir(dirs):
-                os.makedirs(dirs)
-        except:
-            pass
-        success = True
-        msg = ''
-        try:
-            urlretrieve(img_obj.url, img_obj.save_path)
-        except Exception as e:
-            msg = e
-            success = False
-        return {'status': success, 'msg': msg, 'img_obj': img_obj}
+            item_list = self.chrome.find_elements(By.XPATH, self.link_xpath)
+            for item in item_list:
+                page_url = item.get_attribute('href')  # 节点的属性值
+                page_url_set.add(page_url)
 
-    def supply_img_queue(self):
-        res = self.client.get_ready_img_list(self.keyword)
-        if res['code'] == '200':
-            img_dict_list = res['data']
-            for img_dict in img_dict_list:
-                img_obj = model.Img.to_obj(img_dict)
-                self.img_queue.put(img_obj)
-            self.logger.info(f'补充了张{len(img_dict_list)}图片到消费队列...')
+                img = item.find_element(By.TAG_NAME, 'img')
+                img_url = img.get_attribute('src')
+                img_url_set.add(img_url)
 
-    # 下载图片
-    def download_imgs(self):
-        self.logger.warning(f'{self.__class__.__name__}开始下载图片...')
-        self.supply_img_queue()
-        while True:
-            th_pool = ThreadPoolExecutor(5)
-            for _ in range(5):  # 每次启动5个任务去下载图片
-                if not self.img_queue.empty():
-                    img_obj = self.img_queue.get()
-                    future = th_pool.submit(self.download_img, img_obj)
-                    future.add_done_callback(self.download_img_callback)
-            # 等待当前批次的下载任务完成之后再进行下一批次的任务进行
-            th_pool.shutdown()
-
-            # 结束下载
-            if self.img_queue.empty():
-                self.supply_img_queue()
-                # 如果连续15秒内队列中都没有新的数据，就结束爬取
-                for _ in range(15):
-                    time.sleep(1)
-                    if not self.img_queue.empty():
+            # 结束抽取
+            end = False
+            if len(item_list) > self.MAX_PER_PAGE:
+                end = True
+            else:
+                for _ in range(5):
+                    await asyncio.sleep(1)
+                    if len(item_list) != len(
+                            set(self.chrome.find_elements(By.XPATH, self.link_xpath))):
                         break
                 else:
-                    self.logger.warning(f'{self.__class__.__name__}图片下载结束...')
-                    break
+                    end = True
 
-    async def get_img_and_page_by_img(self, img_obj):
-        pass
+            if end:
+                self.logger.warning(
+                    f'[{self.__class__.__name__}]抽取结束,共抽取到{len(item_list)}个item...')
+                break
+
+        page_dict_list = []
+        img_dict_list = []
+
+        for page_url in page_url_set:
+            page_obj = model.Page(keyword=self.keyword,
+                                  url=page_url, source=self.SOURCE)
+            page_dict_list.append(page_obj.to_dict())
+
+        cur_page_obj = model.Page(keyword=self.keyword, url=self.chrome.current_url, source=self.SOURCE,
+                                  status=model.Page.STATUS_CRAWLED, deep=4)
+        page_dict_list.append(cur_page_obj.to_dict())
+
+        for img_url in img_url_set:
+            new_img_obj = model.Img(keyword=self.keyword, url=img_url, source=self.SOURCE, thumb_url=img_url,
+                                    page_url=self.chrome.current_url)
+            img_dict_list.append(new_img_obj.to_dict())
+
+        # 上传服务器
+        img_obj.status = model.Img.STATUS_CRAWLED
+        img_res = await self.client.update_img([img_obj.to_dict()])
+        if img_res['code'] != '200':
+            self.logger.warning(f'[{self.__class__.__name__}]图片状态更新失败...')
+
+        if len(page_dict_list) > 0:
+            page_res = await self.client.upload_page(page_dict_list)
+            if page_res['code'] == '200':
+                self.logger.info(
+                    f'[{self.__class__.__name__}]页面上传成功,上传了{len(page_dict_list)}个页面...')
+            else:
+                msg = page_res['msg']
+                self.logger.info(
+                    f'[{self.__class__.__name__}]页面上传失败,msg:{msg}...')
+
+        if len(img_dict_list) > 0:
+            img_res = await self.client.upload_img(img_dict_list)
+            if img_res['code'] == '200':
+                self.logger.info(
+                    f'[{self.__class__.__name__}]图片上传成功,上传了{len(img_dict_list)}张图片...')
+            else:
+                msg = img_res['msg']
+                self.logger.info(
+                    f'[{self.__class__.__name__}]图片上传失败,msg:{msg}...')
+
+        try:
+            self.chrome.execute_script(self.delInterval_js)
+        except Exception as e:
+            self.logger.error(
+                f'[{self.__class__.__name__}]浏览器中的定时器删除失败,msg:{e}...')
 
     # 执行img_spider
-    async def run_img_spider(self):
+    async def run_img_spider(self) -> None:
 
         while True:
             img_res = await self.client.get_uncrawl_img_by_keyword(self.keyword)
             if img_res['code'] != '200':
                 msg = img_res['msg']
-                self.logger.error(f'[{self.__class__.__name__}]获取img失败,msg:{msg}...')
+                self.logger.error(
+                    f'[{self.__class__.__name__}]获取img失败,msg:{msg}...')
                 return
 
             img_dict = img_res['data']
             if not img_dict:
-                self.logger.warning(f'[{self.__class__.__name__}]无可供识图的img,爬取结束...')
+                self.logger.warning(
+                    f'[{self.__class__.__name__}]无可供识图的img,爬取结束...')
                 return
 
             img_obj = model.Img.to_obj(img_dict)
@@ -236,12 +233,9 @@ class BaseSpider:
 
     @classmethod
     async def gather_task(cls, keyword: str) -> None:
-
         spider = cls(keyword)
         await asyncio.gather(
             spider.run_img_spider(),
-            # spider.download_imgs(),
-            # spider.timed_upload_img(),
         )
 
     # 启动

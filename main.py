@@ -8,6 +8,7 @@ from keyword_spider import bing_spider as keyword_bing_spider
 from keyword_spider import sougou_spider as keyword_sougou_spider
 from keyword_spider import chinaso_spider as keyword_chinaso_spider
 from img_spider import baidu_spider as img_baidu_spider
+from img_spider import download_spider
 from concurrent.futures import ThreadPoolExecutor
 
 
@@ -21,7 +22,7 @@ def main():
     # print(f'=============================')
     # keyword = input('请输入关键字：')
 
-    keyword = '老虎'
+    keyword = '大象'
     th_pool = ThreadPoolExecutor(10)
     # 关键字爬虫
     # th_pool.submit(keyword_baidu_spider.BaiduSpider.run, keyword)  # 百度爬虫
@@ -31,11 +32,12 @@ def main():
     # th_pool.submit(keyword_chinaso_spider.ChinaSoSpider.run, keyword)  # 中国搜索爬虫
     
     # 图片爬虫
-    th_pool.submit(img_baidu_spider.BaiduSpider.run, keyword)
-
+    # th_pool.submit(img_baidu_spider.BaiduSpider.run, keyword)
+    th_pool.submit(download_spider.DownloadSpider.run,keyword)
     th_pool.shutdown()
 
 
 if __name__ == '__main__':
+    
     main()
     # baidu_spider = img_baidu_spider.BaiduSpider.run('美女')

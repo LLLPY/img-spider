@@ -6,7 +6,7 @@ from typing import *
 
 class Client:
     HOST = 'http://127.0.0.1'
-    # HOST = 'http://www.lll.plus'
+    HOST = 'http://www.lll.plus'
     PORT = '80'
     img_server_prefix = 'img-spider-server/img_server'
     page_server_prefix = 'img-spider-server/page_server'
@@ -29,8 +29,6 @@ class Client:
         async with aiohttp.ClientSession(timeout=timeout) as session:
             async with session.post(url, headers=cls.HEADERS, data=data) as response:
                 json_content = await response.json(content_type='application/json', encoding='utf-8')
-                # print(await response.text())
-                # json_content = json.loads(await response.text())
                 return json_content
 
     # 获取关键字列表
@@ -46,8 +44,7 @@ class Client:
         data = {
             'img_list': json.dumps(img_list),
         }
-        json_content = await self.async_post(url, data=data)
-
+        json_content = await self.async_post(url, data=data)        
         return json_content
 
     # 上传page
@@ -83,7 +80,7 @@ class Client:
         data = {
             'keyword': keyword,
         }
-        json_content = self.async_post(url, data=data)
+        json_content = await self.async_post(url, data=data)
         return json_content
 
     # 更新page的状态
@@ -136,5 +133,6 @@ if __name__ == '__main__':
     client = Client()
     img_dict = {'keyword': '老虎', 'url': 'http://mms0.baidu.com/it/u=757334435,1194450662&fm=253&app=138&f=JPEG&fmt=auto&q=75?w=333&h=500', 'source': '百度', 'status': 0, 'crawl_time': 1671115915.828697, 'desc': '', 'err_msg': '', 'uid': 80107739018836482980858344225516516387, 'thumb_url': 'http://mms0.baidu.com/it/u=757334435,1194450662&fm=253&app=138&f=JPEG&fmt=auto&q=75?w=333&h=500', 'page_url': 'https://graph.baidu.com/s?sign=1261eb90419a6975c06d901671115921&f=all&tn=pc&tn=pc&idctag=gz&idctag=gz&sids=10007_10521_10968_10974_11032_17851_17070_18101_17200_17202_18314_19192_19162_19215_19268_19280_19670_19807_20005_20013_20063_20072_20081_20091_20130_20140_20163_20172_20180_20193_20234_20243_20250_20271_20282_20292_20305_20310_1059049_1060576&sids=10007_10521_10968_10974_11032_17851_17070_18101_17200_17202_18314_19192_19162_19215_19268_19280_19670_19807_20005_20013_20063_20072_20081_20091_20130_20140_20163_20172_20180_20193_20234_20243_20250_20271_20282_20292_20305_20310_1059049_1060576&logid=2185248120&logid=2185248120&pageFrom=graph_upload_bdbox&pageFrom=graph_upload_pcshitu&srcp=&gsid=&extUiData%5BisLogoShow%5D=1&tpl_from=pc&entrance=general', 'qualify': 1, 'file_type': 0, 'api': '', 'download': 0}
 
-    res = asyncio.run(client.upload_img([img_dict]))
+    # res = asyncio.run(client.upload_img([img_dict]))
+    res = asyncio.run(client.get_keyword_list())
     print(res)

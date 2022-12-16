@@ -7,7 +7,7 @@ from .base_spider import BaseSpider
 from typing import *
 
 # 关键字爬虫：根据关键字，爬取相关页面，产出imgurl
-class SouGouSpider(BaseSpider):
+class KeywordSouGouSpider(BaseSpider):
     
     API = 'https://pic.sogou.com/napi/pc/searchList?mode=1&query={}&start={}&xml_len={}'
     SOURCE = '搜狗'
