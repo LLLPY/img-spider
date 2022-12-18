@@ -8,6 +8,9 @@ from keyword_spider import bing_spider as keyword_bing_spider
 from keyword_spider import sougou_spider as keyword_sougou_spider
 from keyword_spider import chinaso_spider as keyword_chinaso_spider
 from img_spider import baidu_spider as img_baidu_spider
+from img_spider import _360_spider as img_360_spider
+from img_spider import sougou_spider as img_sougou_spider
+from img_spider import yandex_spider as img_yandex_spider
 from img_spider import download_spider
 from concurrent.futures import ThreadPoolExecutor
 
@@ -30,14 +33,15 @@ def main():
     # th_pool.submit(keyword_bing_spider.KeywordBingSpider.run, keyword)  # bing爬虫
     # th_pool.submit(keyword_sougou_spider.KeywordSouGouSpider.run, keyword)  # 搜狗爬虫
     # th_pool.submit(keyword_chinaso_spider.KeywordChinaSoSpider.run, keyword)  # 中国搜索爬虫
-    
+
     # 图片爬虫
-    # th_pool.submit(img_baidu_spider.BaiduSpider.run, keyword)
-    th_pool.submit(download_spider.DownloadSpider.run,keyword)
+    # th_pool.submit(img_baidu_spider.ImgBaiduSpider.run, keyword)
+    # th_pool.submit(img_360_spider.Img360Spider.run, keyword)
+    # th_pool.submit(img_sougou_spider.ImgSougouSpider.run, keyword)
+    th_pool.submit(img_yandex_spider.ImgYandexSpider.run, keyword)
     th_pool.shutdown()
 
 
 if __name__ == '__main__':
-    
     main()
     # baidu_spider = img_baidu_spider.BaiduSpider.run('美女')

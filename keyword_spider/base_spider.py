@@ -223,6 +223,7 @@ class BaseSpider:
 
                 page_obj.status = model.Page.STATUS_CRAWLED
                 html = self.chrome.page_source
+                # TODO 将页面拉到底
             except Exception as e:
                 self.logger.warning(f'[{spider_name}]页面加载失败...msg:{e}')
                 page_obj.status = model.Page.STATUS_ERROR
@@ -241,7 +242,7 @@ class BaseSpider:
             img_link_list = [self.fix_link(img, host) for img in img_link_list]
 
             # 页面链接
-            page_link_list = e.xpath('//a/img/../@href')
+            page_link_list = e.xpath('//a//img/../@href')
             page_link_list = [self.fix_link(page, host)
                               for page in page_link_list]
 

@@ -2,73 +2,15 @@
 # @Author  ：LLL
 # @Date    ：2022/11/27 11:38
 
-import time
 import conf.conf as conf
 from selenium.webdriver import Chrome
 import model.models as model
-from typing import *
 import asyncio
-from concurrent.futures import ThreadPoolExecutor
 from selenium.webdriver.common.by import By
-
-
-# 工人
-class ChromeWorker:
-    STATUS_READY = 0
-    STATUS_RUNNING = 1
-    STATUS_DONE = 2
-
-    def __init__(self) -> None:
-        self.status = self.STATUS_READY  # 0:待启动 1:运行中 2:运行结束
-        self.chrome = Chrome(
-            service=conf.CHROMEDRIVER_SERVICE, options=conf.chrome_options)
-
-    # 启动
-    def start(self, img_obj):
-        self.status = self.STATUS_RUNNING
-        res = self.chrome.get(img_obj.url)
-        time.sleep(1)
-        self.status = self.STATUS_DONE
-        return res, img_obj
-
-    def is_ready(self):
-        return self.status == self.STATUS_READY
-
-    # callback
-    def done(self, msg):
-        res = msg.result()
-        self.status = self.STATUS_READY
-        return res
-
-    def close(self):
-        self.chrome.close()
-
-
-# 监工
-class ChromeWorkerManager:
-    instance = None
-
-    def __init__(self, workrom_size=5):
-        self.workroom = [ChromeWorker() for _ in range(workrom_size)]
-
-    # 分配任务
-    def dispatch(self, url_list):
-        th_pool = ThreadPoolExecutor(len(self.workroom))
-        for i in range(len(self.workroom)):
-            if self.workroom[i].is_ready() and url_list:
-                future = th_pool.submit(self.workroom[i].start, url_list.pop())
-                future.add_done_callback(self.workroom[i].done)
-        th_pool.shutdown()
-
-    # 关闭所有任务
-    def done(self):
-        for i in range(len(self.workroom)):
-            self.workroom[i].close()
 
 
 # 以图搜图
 class BaseSpider:
-
     HEADERS = conf.HEADERS
 
     # js注入
@@ -113,10 +55,7 @@ class BaseSpider:
             conf.img_spider_logger.error(
                 f'[{self.__class__.__name__}]浏览器窗口关闭失败...错误原因:{e}')
 
-      # 通过图片搜索，获取相似图片的页面，提取页面中相似图片所在的页面链接
-
-    async def get_img_and_page_by_img(self, img_obj: model.Img):
-
+    async def get_page(self, img_obj: model.Img) -> None:
         self.chrome.get(self.API_URL)
         self.chrome.find_element(By.XPATH, self.CAMERA_XPATH).click()
         self.chrome.find_element(
@@ -129,6 +68,10 @@ class BaseSpider:
         # 启动页面下拉定时器
         self.chrome.execute_script(self.setInterval_js)
 
+    # 通过图片搜索，获取相似图片的页面，提取页面中相似图片所在的页面链接
+    async def get_img_and_page_by_img(self, img_obj: model.Img) -> None:
+
+        await self.get_page(img_obj)
         page_url_set = set()
         img_url_set = set()
         while True:
@@ -139,7 +82,6 @@ class BaseSpider:
             for item in item_list:
                 page_url = item.get_attribute('href')  # 节点的属性值
                 page_url_set.add(page_url)
-
                 img = item.find_element(By.TAG_NAME, 'img')
                 img_url = img.get_attribute('src')
                 img_url_set.add(img_url)

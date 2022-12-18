@@ -105,7 +105,6 @@ class DownloadSpider:
 
                 start = time.time()
 
-            print(1111,cls.img_crawled_queue.qsize())
             # end
             for _ in range(15):
                 await asyncio.sleep(1)
@@ -165,3 +164,7 @@ class DownloadSpider:
     @classmethod
     def run(cls, keyword: str) -> None:
         asyncio.run(cls.gather_task(keyword))
+
+
+if __name__ == '__main__':
+    DownloadSpider.run('工地')
