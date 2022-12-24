@@ -7,11 +7,13 @@ from keyword_spider import _360_spider  as keyword_360_spider
 from keyword_spider import bing_spider as keyword_bing_spider
 from keyword_spider import sougou_spider as keyword_sougou_spider
 from keyword_spider import chinaso_spider as keyword_chinaso_spider
+
 from img_spider import baidu_spider as img_baidu_spider
 from img_spider import _360_spider as img_360_spider
 from img_spider import sougou_spider as img_sougou_spider
 from img_spider import yandex_spider as img_yandex_spider
-from img_spider import download_spider
+from img_spider import google_spider as img_google_spider
+
 from concurrent.futures import ThreadPoolExecutor
 
 
@@ -39,6 +41,7 @@ def main():
     # th_pool.submit(img_360_spider.Img360Spider.run, keyword)
     # th_pool.submit(img_sougou_spider.ImgSougouSpider.run, keyword)
     th_pool.submit(img_yandex_spider.ImgYandexSpider.run, keyword)
+    # th_pool.submit(img_google_spider.ImgGoogleSpider.run, keyword)
     th_pool.shutdown()
 
 

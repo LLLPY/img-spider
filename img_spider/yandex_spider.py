@@ -28,3 +28,6 @@ class ImgYandexSpider(BaseSpider):
 
         # 启动页面下拉定时器
         self.chrome.execute_script(self.setInterval_js)
+
+        # TODO 点击READMORE 加载跟多图片
+        # TODO 图片的使用区分，区分当前图片是用于什么搜索引擎

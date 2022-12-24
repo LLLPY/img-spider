@@ -45,7 +45,7 @@ class BaseSpider:
         self.keyword = keyword
         self.chrome = Chrome(
             service=conf.CHROMEDRIVER_SERVICE, options=conf.chrome_options)
-
+        self.chrome.maximize_window()
         self.logger.warning(f'[{self.__class__.__name__}]已启动...')
 
     def __del__(self) -> None:
