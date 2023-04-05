@@ -1,0 +1,12 @@
+{
+  "host": "127.0.0.1",
+  "port": "8000",
+  "timeout": 6,
+  "log_to_file": false,
+  "headers": {
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/100.0.4896.60 Safari/537.36"
+  },
+  "img_spider": {
+    "headless": true
+  }
+}

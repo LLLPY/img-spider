@@ -11,7 +11,7 @@ from selenium.webdriver.common.by import By
 
 # 以图搜图
 class BaseSpider:
-    HEADERS = conf.HEADERS
+    HEADERS = conf.headers
 
     # js注入
     # 间隔一定时间将页面下拉,用于加载更多的图片

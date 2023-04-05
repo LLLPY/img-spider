@@ -6,9 +6,9 @@ import re
 from .base_spider import BaseSpider
 from typing import *
 
+
 # 关键字爬虫：根据关键字，爬取相关页面，产出imgurl
 class KeywordBaiduSpider(BaseSpider):
-    
     API = 'https://image.baidu.com/search/acjson?tn=resultjson_com&ipn=rj&fp=result&word={}&cl=2&lm=-1&ie=utf-8&oe=utf-8&pn={}&rn={}'
     SOURCE = '百度'
     HEADERS = {
@@ -66,7 +66,7 @@ class KeywordBaiduSpider(BaseSpider):
         super().__init__(keyword)
 
     @classmethod
-    def extract(cls, html:str)->List[Dict]:
+    def extract(cls, html: str) -> List[Dict]:
 
         # josn解析失败了就用正则来解析
         try:
@@ -93,7 +93,7 @@ class KeywordBaiduSpider(BaseSpider):
         return data_list
 
     @staticmethod
-    def extract_with_re(html:str)->List[Dict]:
+    def extract_with_re(html: str) -> List[Dict]:
         item_list = []
         # origin_img_list=re.findall(r'objURL":"(.*?)"',html)
         thumb_img_list = re.findall(r'thumbURL":"(.*?)"', html)

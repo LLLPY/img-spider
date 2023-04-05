@@ -18,7 +18,7 @@ class BaseSpider:
     API = None
     SOURCE = None
 
-    HEADERS = conf.HEADERS
+    HEADERS = conf.headers
 
     # 日志器
     logger = conf.img_spider_logger
@@ -44,6 +44,7 @@ class BaseSpider:
                     text = await response.text(encoding='utf8')
                     return text, True
         except Exception as e:
+            print(6666666, e)
             return str(e), False
 
     # 获取某个页面中上一页和下一页的链接
@@ -97,7 +98,6 @@ class BaseSpider:
 
             # 1.请求接口获取图片和页面的地址
             html, success = await cls.async_get(api_url)
-
             if not success:
                 api_obj.status = model.API.STATUS_ERROR
                 api_obj.err_msg = html
@@ -105,11 +105,9 @@ class BaseSpider:
 
             # 2.抽取img和page
             data_list = extract_func(html)
-
             # 3.检查该api的内容是否更新
             api_obj.md5 = model.API.md5(html)
             api_check_res = await cls.client.is_crawled_api(api_obj.md5)
-
             if api_check_res['data']['crawled']:
                 cls.logger.info(
                     f'[{spider_name}]当前api的内容已爬取...api:{api_obj.url}')
@@ -182,6 +180,7 @@ class BaseSpider:
         page_num = 1
         per_page_count = 50
         API_url = self.API
+
         await self.common_spider(keyword, page_num, per_page_count, API_url, self.extract, self.done)
 
     # 修正链接
