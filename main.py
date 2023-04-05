@@ -34,17 +34,16 @@ def main():
     th_pool.submit(keyword_360_spider.Keyword360Spider.run, keyword)  # 360爬虫
     th_pool.submit(keyword_bing_spider.KeywordBingSpider.run, keyword)  # bing爬虫
     th_pool.submit(keyword_sougou_spider.KeywordSouGouSpider.run, keyword)  # 搜狗爬虫
-    th_pool.submit(keyword_chinaso_spider.KeywordChinaSoSpider.run, keyword)  # 中国搜索爬虫
+    # th_pool.submit(keyword_chinaso_spider.KeywordChinaSoSpider.run, keyword)  # 中国搜索爬虫
 
     # 图片爬虫
     th_pool.submit(img_baidu_spider.ImgBaiduSpider.run, keyword)
     th_pool.submit(img_360_spider.Img360Spider.run, keyword)
-    # th_pool.submit(img_sougou_spider.ImgSougouSpider.run, keyword)
-    # th_pool.submit(img_yandex_spider.ImgYandexSpider.run, keyword)
+    th_pool.submit(img_sougou_spider.ImgSougouSpider.run, keyword)
+    th_pool.submit(img_yandex_spider.ImgYandexSpider.run, keyword)
     # th_pool.submit(img_google_spider.ImgGoogleSpider.run, keyword)
     th_pool.shutdown()
 
 
 if __name__ == '__main__':
     main()
-    # baidu_spider = img_baidu_spider.BaiduSpider.run('美女')
