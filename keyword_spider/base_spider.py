@@ -12,6 +12,7 @@ import conf.conf as conf
 import model.models as model
 from selenium.webdriver import Chrome
 from typing import *
+from fake_useragent import UserAgent
 
 
 class BaseSpider:

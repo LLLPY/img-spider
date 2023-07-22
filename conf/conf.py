@@ -24,7 +24,7 @@ try:
     print('*' * 48 + '配置文件' + '*' * 48)
 
 except Exception as e:
-    print(f'配置文件加载异常,程序退出!')
+    print(f'配置文件加载异常,程序退出!{e}')
     exit(0)
 
 # 设置timeout时间为默认为6秒
