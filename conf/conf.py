@@ -55,3 +55,13 @@ chrome_options = webdriver.ChromeOptions()
 chrome_options.add_argument('--ignore-certificate-errors')
 headless = config_data.get('img_spider').get('headless')
 if headless: chrome_options.add_argument('headless')
+
+prefs = {
+    'profile.default_content_setting_values': {
+        'images': 2,  # 不加载图片
+        'videos': 2,  # 不加载图片
+        # 'javascript': 2,  # 不加载JS
+
+    }
+}
+chrome_options.add_experimental_option('prefs', prefs)
