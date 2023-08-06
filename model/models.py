@@ -46,6 +46,10 @@ class Base:
     def to_hash(cls, url: str) -> int:
         return int(uuid.uuid3(uuid.NAMESPACE_URL, url).hex, 16)
 
+    @classmethod
+    def md5(cls, content: str) -> str:
+        return hashlib.md5(content.encode('utf8')).hexdigest()
+
     def __hash__(self) -> int:
         return self.uid
 
@@ -92,10 +96,6 @@ class API(Base):
                  crawl_time=datetime.datetime.now(), desc: str = '', err_msg: str = '', md5: str = '') -> None:
         super().__init__(keyword, url, source, status, crawl_time, desc, err_msg)
         self.md5 = md5
-
-    @classmethod
-    def md5(cls, content: str) -> str:
-        return hashlib.md5(content.encode('utf8')).hexdigest()
 
     def to_dict(self) -> Dict:
         dict_con = super(API, self).to_dict()

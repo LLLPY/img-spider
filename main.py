@@ -1,7 +1,7 @@
 # -*- coding: UTF-8 -*-                            
 # @Author  ：LLL                         
-# @Date    ：2022/11/6 22:05  
-
+# @Date    ：2022/11/6 22:05
+from img_spider.download_spider import DownloadSpider
 from keyword_spider import baidu_spider as keyword_baidu_spider
 from keyword_spider import _360_spider  as keyword_360_spider
 from keyword_spider import bing_spider as keyword_bing_spider
@@ -25,9 +25,9 @@ def main():
     print(f'#           🕸️2022-11-06🕸️  #')
     print(f'#      powered by python🕷️  #')
     print(f'=============================')
-    keyword = input('请输入关键字：')
+    # keyword = input('请输入关键字：')
 
-    # keyword = '大象'
+    keyword = 'pizza'
     th_pool = ThreadPoolExecutor(10)
     # 关键字爬虫
     th_pool.submit(keyword_baidu_spider.KeywordBaiduSpider.run, keyword)  # 百度爬虫
@@ -42,6 +42,7 @@ def main():
     # th_pool.submit(img_sougou_spider.ImgSougouSpider.run, keyword)
     # th_pool.submit(img_yandex_spider.ImgYandexSpider.run, keyword)
     # th_pool.submit(img_google_spider.ImgGoogleSpider.run, keyword)
+    # th_pool.submit(DownloadSpider.run,keyword)
     th_pool.shutdown()
 
 

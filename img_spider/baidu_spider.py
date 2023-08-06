@@ -5,7 +5,7 @@ from .base_spider import BaseSpider
 
 
 class ImgBaiduSpider(BaseSpider):
-    API_URL = 'https://graph.baidu.com/s?sign=1226967dba6bed09cebca01645431413&f=all&tn=pc&tn=pc&idctag=nj&idctag=nj&logid=2944232641&pageFrom=graph_upload_bdbox&pageFrom=graph_upload_pcshitu&srcp=&gsid=&extUiData%5BisLogoShow%5D=1&tpl_from=pc&entrance=general'
+    API_URL = 'https://graph.baidu.com/s?card_key=&entrance=GENERAL&extUiData%5BisLogoShow%5D=1&f=all&isLogoShow=1&session_id=1085026259119883556&sign=121509d70cfb7ee2960aa01691164812&tn=pc&tpl_from=pc'
     CAMERA_XPATH = '//div/span/input'
     INPUT_XPATH = '//div/span/input'
     BUTTON_XPATH = '//div[@class="graph-container"]/div/span[@class="graph-d20-search-btn graph-d20-search-btn-result"]'

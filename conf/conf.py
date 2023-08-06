@@ -55,6 +55,11 @@ chrome_options = webdriver.ChromeOptions()
 chrome_options.add_argument('--ignore-certificate-errors')
 headless = config_data.get('img_spider').get('headless')
 if headless: chrome_options.add_argument('headless')
+chrome_options.add_argument('blink-settings=imagesEnabled=false')  # 不加载图片
+chrome_options.add_experimental_option("excludeSwitches", ["enable-automation"])
+chrome_options.add_experimental_option("excludeSwitches", ["enable-automation"])
+chrome_options.add_experimental_option('useAutomationExtension', False)
+chrome_options.add_argument("window-size=1920,1080")
 
 prefs = {
     'profile.default_content_setting_values': {

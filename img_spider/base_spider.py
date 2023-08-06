@@ -1,6 +1,7 @@
 # -*- coding: UTF-8 -*-
 # @Author  ：LLL
 # @Date    ：2022/11/27 11:38
+import time
 
 import conf.conf as conf
 from selenium.webdriver import Chrome
@@ -50,16 +51,17 @@ class BaseSpider:
 
     def __del__(self) -> None:
         try:
-            self.chrome.close()
+            self.chrome.quit()
         except Exception as e:
             conf.img_spider_logger.error(
                 f'[{self.__class__.__name__}]浏览器窗口关闭失败...错误原因:{e}')
 
     async def get_page(self, img_obj: model.Img) -> None:
         self.chrome.get(self.API_URL)
+        print(11111)
         self.chrome.find_element(By.XPATH, self.CAMERA_XPATH).click()
-        self.chrome.find_element(
-            By.XPATH, self.INPUT_XPATH).send_keys(img_obj.url)
+        print(22222)
+        self.chrome.find_element(By.XPATH, self.INPUT_XPATH).send_keys(img_obj.url)
         self.chrome.find_element(By.XPATH, self.BUTTON_XPATH).click()
 
         # 等待5秒用于加载
@@ -72,6 +74,7 @@ class BaseSpider:
     async def get_img_and_page_by_img(self, img_obj: model.Img) -> None:
 
         await self.get_page(img_obj)
+        print(66666)
         page_url_set = set()
         img_url_set = set()
         while True:
@@ -158,6 +161,7 @@ class BaseSpider:
 
         while True:
             img_res = await self.client.get_uncrawl_img_by_keyword(self.keyword)
+
             if img_res['code'] != '200':
                 msg = img_res['msg']
                 self.logger.error(

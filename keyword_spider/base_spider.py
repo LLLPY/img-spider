@@ -101,13 +101,12 @@ class BaseSpider:
             # 2.检查该api的内容是否更新
             api_obj.md5 = model.API.md5(html)
             api_check_res = await cls.client.is_crawled_api(api_obj.md5)
-            if api_check_res['data']['crawled']:
+            if api_check_res['data']:
                 cls.logger.info(f'[{spider_name}]当前api的内容已爬取...api:{api_obj.url}')
                 continue
 
             # 3.抽取img和page
             data_list = extract_func(html)
-
             # 4.判断是不是最后一页，如果是最后一页就退出
             if done_func(data_list, per_page_count):
                 break
@@ -120,7 +119,6 @@ class BaseSpider:
             tmp_thumb_img_url_set = set()
             tmp_origin_img_url_set = set()
             tmp_page_url_set = set()
-
             for item in data_list:
                 origin_img_url = item['origin_img_url']  # 原图
                 thumb_img_url = item['thumb_img_url']  # 缩略图
@@ -140,6 +138,7 @@ class BaseSpider:
                     keyword=keyword, url=page_url, source=cls.SOURCE, api=api_obj.uid)
                 img_dict_list.append(img_obj.to_dict())
                 page_dict_list.append(page_obj.to_dict())
+                print(img_obj.to_dict())
 
             # 5.上传页面到服务器
             client_list = [cls.client.upload_api, cls.client.upload_page, cls.client.upload_img]
@@ -147,6 +146,7 @@ class BaseSpider:
 
             for data, client in zip(upload_data_list, client_list):
                 res = await client(data)
+                print(res)
                 if res['code'] != '200':
                     msg = res['msg']
                     cls.logger.warning(f'[{spider_name}]上传失败,msg:{msg}...')
@@ -209,7 +209,7 @@ class BaseSpider:
             try:
                 self.chrome.get(page_obj.url)
                 self.chrome.implicitly_wait(10)
-                await asyncio.sleep(2)
+                await asyncio.sleep(random.randint(2, 4))
 
                 page_obj.status = model.Page.STATUS_CRAWLED
                 pre_html = self.chrome.page_source
@@ -228,6 +228,9 @@ class BaseSpider:
                 page_obj.status = model.Page.STATUS_ERROR
                 page_obj.err_msg = str(e)
                 html = '<p></p>'
+                self.chrome.quit()
+                self.chrome = Chrome(service=conf.CHROMEDRIVER_SERVICE, options=conf.chrome_options) #重新实例化一下
+                self.chrome.set_page_load_timeout(5)
 
             host = urlparse(page_obj.url).hostname
             e = etree.HTML(html)
