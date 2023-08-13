@@ -47,10 +47,11 @@ class Client:
 
     # 上传page
     async def upload_page(self, page_list: List[Dict]):
-        url = f'{self.HOST}:{self.PORT}/{self.page_server_prefix}/upload_page'
+        url = f'{self.HOST}:{self.PORT}/{self.page_server_prefix}'
         data = {
             'page_list': json.dumps(page_list),
         }
+
         json_content = await self.async_post(url, data=data)
         return json_content
 
@@ -112,10 +113,7 @@ class Client:
     # 上传api
     async def upload_api(self, api_dict):
         url = f'{self.HOST}:{self.PORT}/{self.api_server_prefix}'
-        data = {
-            'api_dict': json.dumps(api_dict),
-        }
-        json_content = await self.async_post(url, data=data)
+        json_content = await self.async_post(url, data=api_dict)
         return json_content
 
     # 检查api是否已被爬取

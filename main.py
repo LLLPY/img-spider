@@ -27,7 +27,7 @@ def main():
     print(f'=============================')
     # keyword = input('请输入关键字：')
 
-    keyword = 'pizza'
+    keyword = '苹果'
     th_pool = ThreadPoolExecutor(10)
     # 关键字爬虫
     th_pool.submit(keyword_baidu_spider.KeywordBaiduSpider.run, keyword)  # 百度爬虫

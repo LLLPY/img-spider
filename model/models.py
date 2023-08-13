@@ -6,7 +6,6 @@ import uuid
 import datetime
 import os
 from typing import Dict
-
 from conf.conf import workdir
 
 
@@ -26,21 +25,22 @@ class Base:
         STATUS_ERROR: '爬取错误'
     }
 
-    # 合格的图片
-    QUALIFY = 0
-    # 不合格的图片
-    UNQUALIFY = 1
+    fields = []
 
-    def __init__(self, keyword: str, url: str, source: str, status: int = STATUS_UNCRAWL,
-                 crawl_time=datetime.datetime.now(), desc: str = '', err_msg: str = '') -> None:
-        self.keyword = keyword  # 关键词
-        self.url = url  # 地址
+    # @get_fields
+    def __init__(self, keyword: str = None, url: str = None, source: str = None, status: int = None,
+                 desc: str = None, err_msg: str = None, *args, **kwargs) -> None:
+        self.keyword = keyword or ''  # 关键词
+        self.url = url or ''  # 地址
         self.source = source  # 爬取源
-        self.status = status  # 爬取状态
-        self.crawl_time = crawl_time  # 爬取的时间
-        self.desc = desc  # 简介
-        self.err_msg = err_msg  # 错误信息
-        self.uid = int(uuid.uuid3(uuid.NAMESPACE_URL, self.url).hex, 16)  # 唯一标识
+        self.status = status or self.STATUS_UNCRAWL  # 爬取状态
+        self.desc = desc or ''  # 简介
+        self.err_msg = err_msg or ''  # 错误信息
+        self.uid = self.to_hash(self.url)  # 唯一标识
+
+        self.fields = ['keyword', 'url', 'source', 'status', 'desc', 'err_msg', 'uid']
+        self.fields.extend(args)
+        self.fields.extend(kwargs.keys())
 
     @classmethod
     def to_hash(cls, url: str) -> int:
@@ -55,76 +55,45 @@ class Base:
 
     # 将一个对象转成一个字典
     def to_dict(self) -> Dict:
-        dict_con = {
-            'keyword': self.keyword,
-            'url': self.url,
-            'source': self.source,
-            'status': self.status,
-            'crawl_time': self.crawl_time.timestamp(),
-            'desc': self.desc,
-            'err_msg': self.err_msg,
-            'uid': self.uid,
-
-        }
-        return dict_con
-
-    # 创建文件保存的路径
-    def create_save_path(self) -> str:
-        date_now = datetime.datetime.now()
-        return os.path.join(workdir, 'data', self.keyword, str(date_now.year), str(
-            date_now.month), str(date_now.day), str(self.uid) + '.jpg')
+        con = {}
+        for field in self.fields:
+            con.setdefault(field, getattr(self, field))
+        return con
 
     # 将一个字典转成对象
     @classmethod
     def to_obj(cls, obj_dict: dict):
-        img_obj = cls(keyword='', url='', source='')
-        img_obj.keyword = obj_dict.get('keyword')  # 所属分类，根据哪个关键字爬取的就是哪个分类
-        img_obj.url = obj_dict.get('url')  # 原图
-        img_obj.source = obj_dict.get('source')
-        img_obj.status = obj_dict.get('status', cls.STATUS_UNCRAWL)  # 爬取状态(是否已用于图片爬取)
-        img_obj.crawl_time = datetime.datetime.fromtimestamp(obj_dict.get('crawl_time'))
-        img_obj.desc = obj_dict.get('desc')
-        img_obj.err_msg = obj_dict.get('err_msg', '')
-        img_obj.uid = obj_dict.get('uid', cls.to_hash(img_obj.url))
-        return img_obj
+        _self = cls()
+        for attr in cls.fields:
+            setattr(_self, attr, obj_dict.get(attr))
+        return _self
 
 
 # API
 class API(Base):
 
-    def __init__(self, keyword: str, url: str, source: str, status: int = Base.STATUS_UNCRAWL,
-                 crawl_time=datetime.datetime.now(), desc: str = '', err_msg: str = '', md5: str = '') -> None:
-        super().__init__(keyword, url, source, status, crawl_time, desc, err_msg)
+    def __init__(self, keyword: str = None, url: str = None, source: str = None, status: int = None,
+                 desc: str = None, err_msg: str = None, md5: str = None, *args, **kwargs) -> None:
+        super(API, self).__init__(keyword=keyword, url=url, source=source, status=status, desc=desc, err_msg=err_msg,
+                                  *args, **kwargs)
         self.md5 = md5
-
-    def to_dict(self) -> Dict:
-        dict_con = super(API, self).to_dict()
-        dict_con['md5'] = self.md5
-        return dict_con
+        self.fields.extend(['md5'])
 
 
 # 页面
 class Page(Base):
-    def __init__(self, keyword: str, url: str, source: str, status: int = Base.STATUS_UNCRAWL,
-                 crawl_time=datetime.datetime.now(), desc: str = '', err_msg: str = '', deep: int = 1, api: str = ''):
-        self.deep = deep  # 爬取深度
-        self.api = api
-        super().__init__(keyword=keyword, url=url, source=source, status=status, crawl_time=crawl_time, desc=desc,
-                         err_msg=err_msg)
+    def __init__(self, keyword: str = None, url: str = None, source: str = None, status: int = None,
+                 desc: str = None, err_msg: str = None, md5: str = None, deep: int = None, api_url: str = None, *args,
+                 **kwargs):
+        super(Page, self).__init__(keyword=keyword, url=url, source=source, status=status, desc=desc, err_msg=err_msg,
+                                   *args, **kwargs)
+        self.md5 = md5
+        self.deep = deep or 1  # 爬取深度
+        self.api_url = api_url or ''
+        self.api_uid = self.to_hash(self.api_url)
 
-    def to_dict(self) -> dict:
-        dict_con = super(Page, self).to_dict()
-        dict_con.update({
-            'deep': self.deep,
-            'api': self.api,
-        })
-        return dict_con
+        self.fields.extend(['md5', 'deep', 'api_url', 'api_uid'])
 
-    @classmethod
-    def to_obj(cls, obj_dict: dict):
-        obj = super().to_obj(obj_dict)
-        obj.deep = obj_dict.get('deep', 1)
-        return obj
 
 
 # 图片
@@ -136,46 +105,53 @@ class Img(Base):
     DOWNLOADIMG = 2  # 下载中
     DOWNLOADERROR = 3  # 下载失败
 
-    def __init__(self, keyword: str, url: str, source: str, thumb_url: str = '', page_url: str = '',
-                 status: int = Base.STATUS_UNCRAWL, crawl_time=datetime.datetime.now(),
-                 desc: str = '', err_msg: str = '', qualify: int = Base.UNQUALIFY, file_type: int = FILE_IMAGE,
-                 api: str = '', download=UNDOWNLOAD):
-        self.thumb_url = thumb_url  # 缩略图
-        self.page_url = page_url  # 图片所在的页面
-        self.qualify = qualify  # 是否合格,默认不合格
-        self.file_type = file_type  # 文件类型
-        self.api = api  # api
-        self.download = download  # 是否已下载
-        super().__init__(keyword=keyword, url=url, source=source, status=status, crawl_time=crawl_time, desc=desc,
-                         err_msg=err_msg)
-        self.save_path = self.create_save_path()  # 保存的地址
+    # 合格的图片
+    QUALIFY = 0
+    # 不合格的图片
+    UNQUALIFY = 1
 
-    def to_dict(self):
-        dict_con = super(Img, self).to_dict()
-        dict_con.update({
-            'thumb_url': self.thumb_url,
-            'page_url': self.page_url,
-            'qualify': self.qualify,
-            'file_type': self.file_type,
-            'api': self.api,
-            'download': self.download
+    def __init__(self, keyword: str = None, url: str = None, source: str = None, thumb_url: str = None,
+                 page_url: str = None, status_config: dict = None, desc: str = None, err_msg: str = None,
+                 is_qualify: int = None, file_type: int = None, api_url: str = None, is_download: int = None, *args,
+                 **kwargs):
+        super(Img, self).__init__(keyword=keyword, url=url, source=source, desc=desc, err_msg=err_msg, *args, **kwargs)
 
-        })
-        return dict_con
+        self.thumb_url = thumb_url or ''  # 缩略图
+        self.page_url = page_url or ''  # 图片所在的页面
+        self.page_uid = self.to_hash(self.page_url)
+        self.is_qualify = is_qualify or self.UNQUALIFY  # 是否合格,默认不合格
+        self.file_type = file_type or self.FILE_IMAGE  # 文件类型
+        self.api_url = api_url or ''  # api
+        self.api_uid = self.to_hash(self.api_url)
+        self.is_download = is_download or self.UNDOWNLOAD  # 是否已下载
+        self.status_config = status_config or {}  #
+        self.__save_path = os.path.join(self.save_dir, self.name)
+        self.fields.extend(
+            ['thumb_url', 'page_url', 'page_uid', 'is_qualify', 'file_type', 'api_url', 'api_uid', 'is_download',
+             'status_config','save_path'])
 
-    # 将一个字典转成对象
-    @classmethod
-    def to_obj(cls, obj_dict: dict):
-        obj = super().to_obj(obj_dict)
-        obj.thumb_url = obj_dict.get('thumb_url')  # 缩略图
-        obj.page_url = obj_dict.get('page_url')  # 图片所在的页面
-        obj.qualify = obj_dict.get('qualify', cls.UNQUALIFY)  # 是否合格,默认不合格
-        obj.save_path = obj.create_save_path()
-        return obj
+    @property
+    def save_dir(self):
+        date_now = datetime.datetime.now()
+        return os.path.join(workdir, 'data', self.keyword, str(date_now.year), str(date_now.month), str(date_now.day))
+        # 创建文件保存的路径
+
+    @property
+    def name(self) -> str:
+        suffix = '.jpg' if self.file_type == self.FILE_IMAGE else '.mp4'
+        return str(self.uid) + suffix
+
+    @property
+    def save_path(self):
+        return self.__save_path
+
+    @save_path.setter
+    def save_path(self, val):
+        self.__save_path = val
 
 
 if __name__ == '__main__':
-    img = Img('a', 'b', 'c')
-    b = img.to_dict()
-    a = Img.to_obj(b)
-    print(a.crawl_time)
+    img = Img(source='百度')
+    # b = img.to_dict()
+    # c = Img.to_obj(b)
+    # print(b)

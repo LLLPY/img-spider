@@ -104,7 +104,6 @@ class BaseSpider:
             if api_check_res['data']:
                 cls.logger.info(f'[{spider_name}]当前api的内容已爬取...api:{api_obj.url}')
                 continue
-
             # 3.抽取img和page
             data_list = extract_func(html)
             # 4.判断是不是最后一页，如果是最后一页就退出
@@ -133,23 +132,21 @@ class BaseSpider:
                 tmp_page_url_set.add(page_url)
 
                 img_obj = model.Img(keyword=keyword, url=origin_img_url, source=cls.SOURCE, thumb_url=thumb_img_url,
-                                    page_url=page_url, desc=item['desc'], api=api_obj.uid)
+                                    page_url=page_url, desc=item['desc'], api_url=api_obj.url)
                 page_obj = model.Page(
-                    keyword=keyword, url=page_url, source=cls.SOURCE, api=api_obj.uid)
+                    keyword=keyword, url=page_url, source=cls.SOURCE, api_url=api_obj.url)
                 img_dict_list.append(img_obj.to_dict())
                 page_dict_list.append(page_obj.to_dict())
-                print(img_obj.to_dict())
-
             # 5.上传页面到服务器
-            client_list = [cls.client.upload_api, cls.client.upload_page, cls.client.upload_img]
-            upload_data_list = [api_obj.to_dict(), page_dict_list, img_dict_list]
-
-            for data, client in zip(upload_data_list, client_list):
-                res = await client(data)
-                print(res)
-                if res['code'] != '200':
-                    msg = res['msg']
-                    cls.logger.warning(f'[{spider_name}]上传失败,msg:{msg}...')
+            res = await cls.client.upload_api(api_obj.to_dict())
+            if res['code'] != '200':
+                cls.logger.warning('接口上传失败...')
+            res = await cls.client.upload_page(page_dict_list)
+            if res['code'] != '200':
+                cls.logger.warning('页面上传失败...')
+            res = await cls.client.upload_img(img_dict_list)
+            if res['code'] != '200':
+                cls.logger.warning('图片上传失败...')
 
             # 6.结束 最后一页 #TODO ?
             if res['data']['done']:
@@ -203,9 +200,7 @@ class BaseSpider:
             if page_res['code'] != '200':
                 self.logger.warning(f'[{spider_name}]请求页面链接失败...')
                 continue
-
             page_obj = model.Page.to_obj(page_res['data'])
-
             try:
                 self.chrome.get(page_obj.url)
                 self.chrome.implicitly_wait(10)
@@ -229,7 +224,7 @@ class BaseSpider:
                 page_obj.err_msg = str(e)
                 html = '<p></p>'
                 self.chrome.quit()
-                self.chrome = Chrome(service=conf.CHROMEDRIVER_SERVICE, options=conf.chrome_options) #重新实例化一下
+                self.chrome = Chrome(service=conf.CHROMEDRIVER_SERVICE, options=conf.chrome_options)  # 重新实例化一下
                 self.chrome.set_page_load_timeout(5)
 
             host = urlparse(page_obj.url).hostname
@@ -303,7 +298,7 @@ class BaseSpider:
 
         _spider = cls(keyword)
         await asyncio.gather(
-            _spider.get_page_and_img_on_api(),  # 爬取api上的页面和图片
+            # _spider.get_page_and_img_on_api(),  # 爬取api上的页面和图片
             _spider.get_page_and_img_on_page(),  # 爬取页面上的页面和图片
         )
 
