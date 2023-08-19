@@ -183,6 +183,10 @@ class BaseSpider:
 
         return url.strip('/')
 
+    @classmethod
+    async def is_done(cls, chrome):
+        pre_html = chrome
+
     # 获取页面上的page和img
     async def get_page_and_img_on_page(self) -> None:
 
@@ -216,6 +220,7 @@ class BaseSpider:
                         self.logger.info('页面加载完成...')
                         break
                     await asyncio.sleep(1)
+                    pre_html = html
 
                 # TODO 将页面拉到底
             except Exception as e:

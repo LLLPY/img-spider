@@ -38,9 +38,9 @@ class Base:
         self.err_msg = err_msg or ''  # 错误信息
         self.uid = self.to_hash(self.url)  # 唯一标识
 
-        self.fields = ['keyword', 'url', 'source', 'status', 'desc', 'err_msg', 'uid']
-        self.fields.extend(args)
-        self.fields.extend(kwargs.keys())
+        self.__class__.fields = ['keyword', 'url', 'source', 'status', 'desc', 'err_msg', 'uid']
+        self.__class__.fields.extend(args)
+        self.__class__.fields.extend(kwargs.keys())
 
     @classmethod
     def to_hash(cls, url: str) -> int:
@@ -77,7 +77,7 @@ class API(Base):
         super(API, self).__init__(keyword=keyword, url=url, source=source, status=status, desc=desc, err_msg=err_msg,
                                   *args, **kwargs)
         self.md5 = md5
-        self.fields.extend(['md5'])
+        self.__class__.fields.extend(['md5'])
 
 
 # 页面
@@ -92,7 +92,7 @@ class Page(Base):
         self.api_url = api_url or ''
         self.api_uid = self.to_hash(self.api_url)
 
-        self.fields.extend(['md5', 'deep', 'api_url', 'api_uid'])
+        self.__class__.fields.extend(['md5', 'deep', 'api_url', 'api_uid'])
 
 
 
@@ -126,7 +126,7 @@ class Img(Base):
         self.is_download = is_download or self.UNDOWNLOAD  # 是否已下载
         self.status_config = status_config or {}  #
         self.__save_path = os.path.join(self.save_dir, self.name)
-        self.fields.extend(
+        self.__class__.fields.extend(
             ['thumb_url', 'page_url', 'page_uid', 'is_qualify', 'file_type', 'api_url', 'api_uid', 'is_download',
              'status_config','save_path'])
 
