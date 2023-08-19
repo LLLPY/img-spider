@@ -3,12 +3,12 @@
 # @Date    ：2022/11/7 21:24
 import json
 import re
-from .base_spider import BaseSpider
+from .base_spider import APISpider
 from typing import *
 
 
 # 关键字爬虫：根据关键字，爬取相关页面，产出imgurl
-class KeywordBaiduSpider(BaseSpider):
+class KeywordBaiduSpider(APISpider):
     API = 'https://image.baidu.com/search/acjson?tn=resultjson_com&ipn=rj&fp=result&word={}&cl=2&lm=-1&ie=utf-8&oe=utf-8&pn={}&rn={}'
     SOURCE = '百度'
     HEADERS = {
@@ -66,7 +66,7 @@ class KeywordBaiduSpider(BaseSpider):
         super().__init__(keyword)
 
     @classmethod
-    def extract(cls, html: str) -> List[Dict]:
+    async def extract(cls, html: str) -> List[Dict]:
 
         # josn解析失败了就用正则来解析
         try:
@@ -74,13 +74,13 @@ class KeywordBaiduSpider(BaseSpider):
             item_list = json_content.get('data', [])
         except Exception as e:
             cls.logger.warning(f'[{cls.__name__}]json内容抽取失败...e:{e}')
-            item_list = cls.extract_with_re(html)
+            item_list = await cls.extract_with_re(html)
 
         data_list = []
         for item in item_list:
-            origin_img_url = cls.parse_encrypt_url(item.get('objURL', ''))  # 原图地址
-            thumb_img_url = cls.parse_encrypt_url(item.get('objURL', ''))  # 缩略图地址
-            page_url = cls.parse_encrypt_url(item.get('fromURL', ''))  # 页面地址
+            origin_img_url = await cls.parse_encrypt_url(item.get('objURL', ''))  # 原图地址
+            thumb_img_url = await cls.parse_encrypt_url(item.get('objURL', ''))  # 缩略图地址
+            page_url = await cls.parse_encrypt_url(item.get('fromURL', ''))  # 页面地址
             desc = item.get('fromPageTitleEnc', '')  # 描述
             if item:
                 item = {
@@ -93,7 +93,7 @@ class KeywordBaiduSpider(BaseSpider):
         return data_list
 
     @staticmethod
-    def extract_with_re(html: str) -> List[Dict]:
+    async def extract_with_re(html: str) -> List[Dict]:
         item_list = []
         # origin_img_list=re.findall(r'objURL":"(.*?)"',html)
         thumb_img_list = re.findall(r'thumbURL":"(.*?)"', html)
@@ -110,7 +110,7 @@ class KeywordBaiduSpider(BaseSpider):
 
     # 解析加密的url
     @classmethod
-    def parse_encrypt_url(cls, encrypt_url: str) -> str:
+    async def parse_encrypt_url(cls, encrypt_url: str) -> str:
 
         encrypt_url = re.sub('AzdH3F', '/', encrypt_url)  # 替换
         encrypt_url = re.sub("_z&e3B", ".", encrypt_url)

@@ -3,12 +3,12 @@
 # @Date    ：2022/11/17 22:40  
 
 import re
-from .base_spider import BaseSpider
+from .base_spider import APISpider
 import json
 from typing import *
 
 # 关键字爬虫：根据关键字，爬取相关页面，产出imgurl
-class KeywordBingSpider(BaseSpider):
+class KeywordBingSpider(APISpider):
     
     API = 'https://cn.bing.com/images/async?q={}&first={}&count={}&datsrc=I&layout=RowBased_Landscape&mmasync=1'
     SOURCE = 'bing'
@@ -29,7 +29,7 @@ class KeywordBingSpider(BaseSpider):
         super().__init__(keyword)
 
     @classmethod
-    def extract(cls, html:str)->List[Dict]:
+    async def extract(cls, html:str)->List[Dict]:
         data_list = []
         # 数据抽取
         json_content = re.sub(r'&quot;', '"', html)

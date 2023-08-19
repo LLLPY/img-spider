@@ -27,14 +27,14 @@ def main():
     print(f'=============================')
     # keyword = input('请输入关键字：')
 
-    keyword = '苹果'
+    keyword = '美女'
     th_pool = ThreadPoolExecutor(10)
     # 关键字爬虫
     th_pool.submit(keyword_baidu_spider.KeywordBaiduSpider.run, keyword)  # 百度爬虫
-    # th_pool.submit(keyword_360_spider.Keyword360Spider.run, keyword)  # 360爬虫
-    # th_pool.submit(keyword_bing_spider.KeywordBingSpider.run, keyword)  # bing爬虫
-    # th_pool.submit(keyword_sougou_spider.KeywordSouGouSpider.run, keyword)  # 搜狗爬虫
-    # th_pool.submit(keyword_chinaso_spider.KeywordChinaSoSpider.run, keyword)  # 中国搜索爬虫
+    th_pool.submit(keyword_360_spider.Keyword360Spider.run, keyword)  # 360爬虫
+    th_pool.submit(keyword_bing_spider.KeywordBingSpider.run, keyword)  # bing爬虫
+    th_pool.submit(keyword_sougou_spider.KeywordSouGouSpider.run, keyword)  # 搜狗爬虫
+    th_pool.submit(keyword_chinaso_spider.KeywordChinaSoSpider.run, keyword)  # 中国搜索爬虫
 
     # 图片爬虫
     # th_pool.submit(img_baidu_spider.ImgBaiduSpider.run, keyword)

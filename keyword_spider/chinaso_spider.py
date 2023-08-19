@@ -3,12 +3,12 @@
 # @Date    ：2022/11/19 21:08  
 
 import json
-from .base_spider import BaseSpider
+from .base_spider import APISpider
 from typing import *
 
 
 # 关键字爬虫：根据关键字，爬取相关页面，产出imgurl
-class KeywordChinaSoSpider(BaseSpider):
+class KeywordChinaSoSpider(APISpider):
     API = 'https://www.chinaso.com/v5/general/v1/search/image?q={}&start_index={}&rn={}'
     SOURCE = '中国搜索'
     HEADERS = {
@@ -28,7 +28,7 @@ class KeywordChinaSoSpider(BaseSpider):
         super().__init__(keyword)
 
     @classmethod
-    def extract(cls, html:str)->List[Dict]:
+    async def extract(cls, html:str)->List[Dict]:
         data_list = []
         # 数据抽取
         json_content = json.loads(html)

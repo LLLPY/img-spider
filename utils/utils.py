@@ -5,6 +5,7 @@ import sys, os
 sys.path.append(f'..{os.sep}')
 
 import conf.conf as conf
+import hashlib
 
 
 # 协程计时器，计算函数执行耗时
@@ -19,3 +20,8 @@ def clocked(func):
         return res
 
     return clock_it
+
+
+async def md5(content):
+    '''信息摘要'''
+    return hashlib.md5(str(content).encode('utf8')).hexdigest()

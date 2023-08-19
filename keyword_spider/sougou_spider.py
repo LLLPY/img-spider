@@ -3,12 +3,12 @@
 # @Date    ：2022/11/17 22:40
 
 import json
-from .base_spider import BaseSpider
+from .base_spider import APISpider
 from typing import *
 
+
 # 关键字爬虫：根据关键字，爬取相关页面，产出imgurl
-class KeywordSouGouSpider(BaseSpider):
-    
+class KeywordSouGouSpider(APISpider):
     API = 'https://pic.sogou.com/napi/pc/searchList?mode=1&query={}&start={}&xml_len={}'
     SOURCE = '搜狗'
     HEADERS = {
@@ -28,7 +28,7 @@ class KeywordSouGouSpider(BaseSpider):
         super().__init__(keyword)
 
     @classmethod
-    def extract(cls, html:str)->List[str]:
+    async def extract(cls, html: str) -> List[str]:
         # 数据抽取
         json_content = json.loads(html)
         data = json_content.get('data', {}) or {}
