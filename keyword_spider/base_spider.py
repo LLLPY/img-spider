@@ -54,6 +54,8 @@ class BaseSpider:
     # 启动
     @classmethod
     def run(cls, keyword: str) -> None:
+        # loop = asyncio.get_event_loop()
+        # loop.run_until_complete(cls.gather_task(keyword),)
         asyncio.run(cls.gather_task(keyword))
 
 
@@ -71,7 +73,7 @@ class APISpider(BaseSpider):
         if not cls.per_page_count:
             cls.per_page_count = len(data_list)
 
-        return len(data_list) == 0 or len(data_list) < cls.per_page_count
+        return len(data_list) == 0  # or len(data_list) < cls.per_page_count
 
     # 获取api上的页面和图片
     async def get_page_and_img_on_api(self, page_num: int, per_page_count: int) -> None:
@@ -95,10 +97,10 @@ class APISpider(BaseSpider):
                 self.client.upload_api(api_obj.to_dict())
                 continue
 
-            # 2.检查该api的内容是否更新
+            # 2.检查该api的内容是否更新 # TODO 周期性的去检查，不要每次都进行检查
             api_obj.md5 = model.API.md5(html)
             api_check_res = await self.client.is_crawled_api(api_obj.md5)
-            if api_check_res.get('data'):
+            if api_check_res.get('status'):
                 self.logger.info(f'[{spider_name}]当前api的内容已爬取...api:{api_obj.url}')
                 continue
 
@@ -139,6 +141,7 @@ class APISpider(BaseSpider):
             res = await self.client.upload_api(api_obj.to_dict())
             if res['code'] != '200':
                 self.logger.warning('接口上传失败...')
+
             res = await self.client.upload_page(page_dict_list)
             if res['code'] != '200':
                 self.logger.warning('页面上传失败...')
@@ -151,12 +154,15 @@ class APISpider(BaseSpider):
                 self.per_page_count = min(len(data_list), per_page_count)
 
             # 6.结束 最后一页
-            if res['data']['done'] or await self.done(data_list):
-                self.logger.info('')
+            if await self.done(data_list):  # TODO 如果连续3次获得内容一样，可以触发结束
+                # if res['data']['done']:
+                #     self.logger.info(f'该接口上的所有图片已被抓取，爬取结束...')
+                # else:
+                self.logger.info(f'爬取结束，最后一页的数量:{len(data_list)}，设置的每页数量:{self.per_page_count}')
                 break
 
             self.logger.info(
-                f'[{spider_name}]-api抓取,页码:{page_num},抓取了{len(tmp_origin_img_url_set)}个原始图片链接,{len(tmp_thumb_img_url_set)}个缩略图片链接,{len(tmp_page_url_set)}个页面链接,,api地址:{api_url}')
+                f'[{spider_name}]-api抓取,页码:{page_num},抓取了{len(tmp_origin_img_url_set)}个原始图片链接,{len(tmp_thumb_img_url_set)}个缩略图片链接,{len(tmp_page_url_set)}个页面链接,api地址:{api_url}')
 
             page_num += len(data_list)  # 页数增加
 

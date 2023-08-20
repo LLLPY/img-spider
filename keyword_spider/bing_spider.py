@@ -7,9 +7,9 @@ from .base_spider import APISpider
 import json
 from typing import *
 
+
 # 关键字爬虫：根据关键字，爬取相关页面，产出imgurl
 class KeywordBingSpider(APISpider):
-    
     API = 'https://cn.bing.com/images/async?q={}&first={}&count={}&datsrc=I&layout=RowBased_Landscape&mmasync=1'
     SOURCE = 'bing'
     HEADERS = {
@@ -24,12 +24,19 @@ class KeywordBingSpider(APISpider):
         'sec-fetch-mode': 'cors',
         'sec-fetch-site': 'same-origin'
     }
-    
+
     def __init__(self, keyword: str) -> None:
         super().__init__(keyword)
 
     @classmethod
-    async def extract(cls, html:str)->List[Dict]:
+    async def done(cls, data_list) -> bool:
+        if not cls.per_page_count:
+            cls.per_page_count = len(data_list)
+
+        return len(data_list) == 0 or len(data_list) < cls.per_page_count
+
+    @classmethod
+    async def extract(cls, html: str) -> List[Dict]:
         data_list = []
         # 数据抽取
         json_content = re.sub(r'&quot;', '"', html)
@@ -48,6 +55,3 @@ class KeywordBingSpider(APISpider):
             }
             data_list.append(item)
         return data_list
-
-
-

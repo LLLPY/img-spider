@@ -9,7 +9,6 @@ from typing import *
 
 # 关键字爬虫：根据关键字，爬取相关页面，产出imgurl
 class Keyword360Spider(APISpider):
-
     API = 'https://image.so.com/j?q={}&qtag=&pd=1&pn=60&adstar=0&tab=all&sid=15d39fba0b6f9e26589eed4f9434a0c5&ras=6&cn=0&gn=0&kn=11&crn=0&bxn=20&cuben=0&pornn=0&manun=4&sn={}&pc={}'
 
     SOURCE = '360'

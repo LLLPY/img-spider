@@ -112,7 +112,7 @@ class Client:
 
     # 上传api
     async def upload_api(self, api_dict):
-        url = f'{self.HOST}:{self.PORT}/{self.api_server_prefix}'
+        url = f'{self.HOST}:{self.PORT}/{self.api_server_prefix}/upload_api'
         json_content = await self.async_post(url, data=api_dict)
         return json_content
 
@@ -128,6 +128,7 @@ class Client:
 
 if __name__ == '__main__':
     host = '127.0.0.1'
+    host = '192.168.137.1'
     port = 8000
     headers = {}
     client = Client(host, port, headers)
